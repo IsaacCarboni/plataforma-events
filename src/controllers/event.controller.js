@@ -3,10 +3,18 @@ import { EventModel } from '../models/event.model.js';
 // 1. Lógica efectiva para CREAR un evento nuevo
 export const createEvent = async (req, res) => {
     try {
-        const { title, description, date, capacity } = req.body;
+        // Desestructuramos todos los campos necesarios que pusimos en el modelo
+        const { title, description, date, capacity, location, price } = req.body;
 
-        // Pasamos los datos recibidos por el molde del modelo
-        const newEvent = new EventModel({ title, description, date, capacity });
+        // Pasamos todos los datos recibidos por el molde del modelo
+        const newEvent = new EventModel({ 
+            title, 
+            description, 
+            date, 
+            capacity, 
+            location, 
+            price 
+        });
         
         // Guardamos de forma asíncrona en la base de datos
         await newEvent.save();
@@ -18,14 +26,14 @@ export const createEvent = async (req, res) => {
             data: newEvent
         });
     } catch (error) {
-        // Si falta un dato obligatorio o hay error, lo atrapamos acá
+        // Si falta un dato obligatorio (como location) o hay error, cae acá
         res.status(400).json({
             status: 'error',
             message: '❌ No se pudo crear el evento',
             error: error.message
         });
     }
-}; // <--- Acá cierra perfecto createEvent
+};
 
 // 2. Lógica efectiva para TRAER todos los eventos
 export const getEvents = async (req, res) => {
