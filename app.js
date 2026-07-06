@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser'; // 👈 Importado arriba flama
 import { connectDB } from './src/config/db.config.js';
 import eventRoutes from './src/routes/event.routes.js';
 import sessionRoutes from './src/routes/session.routes.js';
@@ -12,8 +13,9 @@ const app = express();
 // Conectamos a Mongo Atlas
 connectDB();
 
-// Middlewares básicos para recibir JSON y formularios
+// Middlewares básicos para recibir JSON, formularios y cookies
 app.use(express.json());
+app.use(cookieParser()); // 👈 Agregado acá abajo de express.json()
 app.use(express.urlencoded({ extended: true }));
 
 // 🛣️ Vinculación de rutas por capas

@@ -1,9 +1,12 @@
 import { Router } from 'express';
-import { getSessionProfile } from '../controllers/session.controller.js';
+import { register, login, getSessionProfile, logout } from '../controllers/session.controller.js';
+import { authMiddleware } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
-// Ruta base inicial para sessions
-router.get('/current', getSessionProfile);
+router.post('/register', register);
+router.post('/login', login);
+router.get('/current', authMiddleware, getSessionProfile);
+router.post('/logout', logout);
 
 export default router;
