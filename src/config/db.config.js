@@ -2,16 +2,19 @@ import mongoose from 'mongoose';
 
 const connectDB = async () => {
     try {
-        // Si no hay variable real, simulamos el éxito para que la app no crashée hoy
         if (!process.env.MONGO_URL || process.env.MONGO_URL.includes('tu_conexion')) {
-            console.log("Conexión simulada a MongoDB (Entorno local de desarrollo) 🟢");
-            return;
+            throw new Error("No se detectó una URL válida en el archivo .env");
         }
-        await mongoose.connect(process.env.MONGO_URL);
-        console.log("Conexión exitosa a MongoDB Atlas 🟢");
+
+        // Le metemos opciones de timeout estrictas para que no se congele 10 segundos
+        await mongoose.connect(process.env.MONGO_URL, {
+            serverSelectionTimeoutMS: 3000, // 3 segundos máximo para conectar
+        });
+        
+        console.log("✅ Conexión exitosa a MongoDB Atlas 🟢");
     } catch (error) {
-        console.log("Aviso en base de datos 🟡:", error.message);
-        console.log("Continuando en modo local para la entrega...");
+        console.log("❌ Error crítico en base de datos 🟡:", error.message);
+        console.log("⚠️ Asegurate de estar conectado a internet y tener tu IP habilitada en Atlas.");
     }
 };
 

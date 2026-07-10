@@ -36,26 +36,26 @@ class SessionService {
         return newUser;
     }
 
-    async loginUser(email, password) {
+ async loginUser(email, password) {
         if (!email || !password) {
-            throw new Error('Credenciales inválidas');
+            throw new Error('Faltan campos obligatorios');
         }
 
         const normalizedEmail = email.trim().toLowerCase();
 
-        // Buscar usuario por email
+        // 1. Buscamos el usuario real en Atlas a través del DAO
         const user = await userDAO.findByEmail(normalizedEmail);
         if (!user) {
-            throw new Error('Credenciales inválidas'); // Mensaje genérico por seguridad
+            throw new Error('Credenciales inválidas');
         }
 
-        // Comparar contraseña con bcrypt
-        const isPasswordCorrect = await isValidPassword(password, user.password);
-        if (!isPasswordCorrect) {
-            throw new Error('Credenciales inválidas'); // Mensaje genérico por seguridad
+        // 2. Comparamos la contraseña ingresada con el hash encriptado de la BD
+        const isPasswordValid = await isValidPassword(password, user.password);
+        if (!isPasswordValid) {
+            throw new Error('Credenciales inválidas');
         }
 
-        // Generar el JWT
+        // 3. Si todo está ok, generamos el token con los datos del documento real
         const token = generateToken(user);
         return token;
     }
