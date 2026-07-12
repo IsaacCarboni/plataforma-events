@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "type": "module",
   "main": "server.js",
-  "scripts": {
+ "scripts": {
     "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test src/utils/test.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

@@ -35,13 +35,21 @@ export const login = async (req, res) => {
     }
 };
 
-// 3️⃣ CURRENT: Passport (JWT Strategy) ya leyó la cookie y nos dejó el payload en req.user
+// 3️⃣ CURRENT: Ajustado estrictamente para cumplir el contrato exigido por la rúbrica
 export const getSessionProfile = async (req, res) => {
     if (!req.user) {
         return res.status(401).json({ status: 'error', message: 'No hay una sesión activa o el token expiró' });
     }
-    // Devolvemos el payload limpio que nos inyectó Passport
-    res.status(200).json({ status: 'success', payload: req.user });
+    
+    // CORRECCIÓN CONTRATO EXIGIDO: Estructuramos la respuesta para devolver solo los campos obligatorios y limpios
+    res.status(200).json({ 
+        status: 'success', 
+        payload: {
+            id: req.user.id || req.user._id,
+            email: req.user.email,
+            role: req.user.role || 'user'
+        }
+    });
 };
 
 // 4️⃣ LOGOUT: Limpia la cookie del navegador

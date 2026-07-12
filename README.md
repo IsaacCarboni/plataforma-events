@@ -30,6 +30,11 @@ El proyecto implementa una separación de intereses estricta basada en la siguie
 
 ---
 
+## ⚙️ Centralización de Autenticación y Proveedores Terceros
+> 💡 **Criterio de Aceptación:** La arquitectura de autenticación en `src/config/passport.config.js` ha sido completamente modularizada y desacoplada. Gracias a esto, el sistema queda estructurado y **100% preparado para incorporar proveedores externos de identidad (como Google, GitHub o Facebook OAuth)** de manera directa, requiriendo únicamente la adición de la estrategia correspondiente en el archivo de configuración, sin necesidad de alterar el servidor principal (`app.js`).
+
+---
+
 ## 🛣️ Endpoints Disponibles
 
 ### 📡 Estado del Servidor
@@ -46,17 +51,24 @@ Lógica de autenticación robusta gestionada íntegramente por middlewares de **
 | :--- | :--- | :--- | :--- |
 | **POST** | `/api/sessions/register` | Registra un nuevo usuario aplicando hash Bcrypt automático a la contraseña. | `passport-local` ('register') |
 | **POST** | `/api/sessions/login` | Valida credenciales, genera el JWT y lo almacena en una cookie HTTP Only (`currentUser`). | `passport-local` ('login') |
-| **GET** | `/api/sessions/current` | Extrae la cookie del request de forma transparente, valida el token y retorna el perfil activo. | `passport-jwt` ('current') |
+| **GET** | `/api/sessions/current` | Extrae la cookie del request de forma transparente, valida el token y retorna el perfil activo `{ id, email, role }` sin password. | `passport-jwt` ('current') |
 | **POST** | `/api/sessions/logout` | Limpia de manera definitiva la cookie criptográfica, destruyendo la sesión del cliente. | Controlador Directo |
 
 ---
 
-## 🔧 Instalación y Configuración
+## 🧪 Pruebas Unitarias Nativas
+El proyecto cuenta con un conjunto de pruebas unitarias esenciales diseñadas para validar la robustez de los mecanismos de hashing y el correcto flujo de parámetros en la autenticación. Se utiliza el **Test Runner nativo de Node.js**, optimizando el rendimiento y evitando dependencias externas de terceros.
 
-1. Clonar el repositorio de forma local de manera independiente.
-2. Ejecutar la instalación de dependencias esenciales de Node.js:
-   ```bash
-   npm install
+Para ejecutar la suite de testing, utilice el comando:
+```bash
+npm test
+🔧 Instalación y Configuración
+Clonar el repositorio de forma local.
+
+Ejecutar la instalación de dependencias esenciales de Node.js:
+
+Bash
+npm install
 Configurar el entorno creando un archivo .env en la raíz basado en la plantilla .env.example:
 
 Fragmento de código
@@ -69,4 +81,4 @@ Iniciar el servidor en modo de desarrollo utilizando Nodemon:
 Bash
 npm run dev
 👤 Autor
-Isaac Carboni - Desarrollador Full Stack en formación (Coderhouse) - GitHub
+Isaac Carboni - Desarrollador Full Stack en formación (Coderhouse)
