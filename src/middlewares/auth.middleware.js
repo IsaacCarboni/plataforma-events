@@ -50,4 +50,4 @@ export const handleRoles = (allowedRoles = []) => {
         // Si el rol es correcto, permitimos avanzar al controlador
         next();
     };
-};
+};  
