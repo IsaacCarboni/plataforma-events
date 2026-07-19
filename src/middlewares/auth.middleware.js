@@ -1,16 +1,14 @@
 import passport from 'passport';
 
 /**
- * 🟢 Middleware de Autenticación (Reutilizable)
- * Lee el JWT desde la cookie 'currentUser' usando Passport, lo valida y puebla req.user.
- * Si falla, responde con el Error 401 que exige la rúbrica.
+ * Middleware de Autenticación Centralizado
+ * Extrae y valida el token JWT desde la cookie 'currentUser'.
+ * Responde con código 401 si la sesión no es válida, expiró o no existe.
  */
 export const authMiddleware = (req, res, next) => {
-    // Usamos la estrategia 'current' de Passport que ya configuramos para extraer y validar la cookie
     passport.authenticate('current', { session: false }, (err, user, info) => {
         if (err) return next(err);
         
-        // Si no hay usuario válido (falta token, expiró o es inválido) -> Error 401
         if (!user) {
             return res.status(401).json({ 
                 status: 'error', 
@@ -18,36 +16,31 @@ export const authMiddleware = (req, res, next) => {
             });
         }
         
-        // Guardamos el usuario decodificado en el request para que esté disponible en las rutas
         req.user = user;
         next();
     })(req, res, next);
 };
 
 /**
- * 🟠 Middleware de Autorización (Reutilizable)
- * Recibe un array de roles permitidos y los compara contra el rol de req.user.
- * Si no coincide, responde con el Error 403 que exige la rúbrica.
+ * Middleware de Autorización basado en Roles (RBAC)
+ * Evalúa los privilegios del usuario autenticado contra los roles permitidos.
+ * Responde con código 403 si el rol no cuenta con los permisos requeridos.
  */
 export const handleRoles = (allowedRoles = []) => {
     return (req, res, next) => {
-        // Validación de seguridad inicial si por alguna razón no pasó por authMiddleware primero
         if (!req.user) {
             return res.status(401).json({ status: 'error', message: 'No autenticado.' });
         }
 
-        const userRole = req.user.role || 'user';
+        const userRole = req.user.role || 'default user';
 
-        // Comparamos el rol del usuario logueado contra la lista de roles autorizados
         if (!allowedRoles.includes(userRole)) {
-            // Si el rol no tiene permisos -> Error 403 (Forbidden) obligatorios
             return res.status(403).json({ 
                 status: 'error', 
-                message: `Acceso denegado: El rol '${userRole}' no tiene los privilegios necesarios.` 
+                message: `Acceso denegado: El rol '${userRole}' no tiene los privilegios necesarios para realizar esta acción.` 
             });
         }
 
-        // Si el rol es correcto, permitimos avanzar al controlador
         next();
     };
-};  
+};

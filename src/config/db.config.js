@@ -1,20 +1,24 @@
 import mongoose from 'mongoose';
 
+/**
+ * Configuración y Conexión a la Base de Datos
+ * Inicializa la conexión asíncrona con MongoDB Atlas aplicando límites de tiempo estrictos.
+ */
 const connectDB = async () => {
     try {
         if (!process.env.MONGO_URL || process.env.MONGO_URL.includes('tu_conexion')) {
-            throw new Error("No se detectó una URL válida en el archivo .env");
+            throw new Error("Cadena de conexión inválida o no configurada en las variables de entorno (.env).");
         }
 
-        // Le metemos opciones de timeout estrictas para que no se congele 10 segundos
+        // Selección de servidor con límite de tiempo de 3 segundos para evitar bloqueos
         await mongoose.connect(process.env.MONGO_URL, {
-            serverSelectionTimeoutMS: 3000, // 3 segundos máximo para conectar
+            serverSelectionTimeoutMS: 3000, 
         });
         
-        console.log("✅ Conexión exitosa a MongoDB Atlas 🟢");
+        console.log("Conexión establecida con éxito a MongoDB Atlas.");
     } catch (error) {
-        console.log("❌ Error crítico en base de datos 🟡:", error.message);
-        console.log("⚠️ Asegurate de estar conectado a internet y tener tu IP habilitada en Atlas.");
+        console.error("Error crítico en el módulo de base de datos:", error.message);
+        console.warn("Verifique la conectividad de red y la lista blanca de direcciones IP en el panel de Atlas.");
     }
 };
 

@@ -22,6 +22,13 @@ const eventSchema = new Schema({
         type: Number, 
         required: true // Cupos máximos disponibles para inscripciones
     },
+    // 🌟 NUEVO: Vinculamos el evento con el ID del usuario (organizer/admin) que lo crea.
+    // Esto nos permite cumplir con el criterio de que un organizer solo modifique sus propios eventos.
+    organizer: { 
+        type: Schema.Types.ObjectId, 
+        ref: 'users', 
+        required: true 
+    },
     status: { 
         type: String, 
         enum: ['draft', 'published', 'cancelled'], 

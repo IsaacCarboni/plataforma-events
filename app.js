@@ -1,35 +1,26 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import cookieParser from 'cookie-parser'; // 👈 Importado arriba flama
-import { connectDB } from './src/config/db.config.js';
-import eventRoutes from './src/routes/event.routes.js';
-import sessionRoutes from './src/routes/session.routes.js';
+import cookieParser from 'cookie-parser';
+import { connectDB } from './src/config/db.config.js'; 
+import eventRoutes from './src/routes/event.routes.js';   // 👈 Cambiado a .routes.js
+import sessionRoutes from './src/routes/session.routes.js'; // 👈 Cambiado a .routes.js
 
-// Configuración de variables de entorno
 dotenv.config();
 
 const app = express();
 
-// Conectamos a Mongo Atlas
+// Inicialización de la persistencia de datos (Acá se conecta a Mongo Atlas)
 connectDB();
 
-// Middlewares básicos para recibir JSON, formularios y cookies
 app.use(express.json());
-app.use(cookieParser()); // 👈 Agregado acá abajo de express.json()
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-// 🛣️ Vinculación de rutas por capas
 app.use('/api/events', eventRoutes);
 app.use('/api/sessions', sessionRoutes);
 
-// Endpoint de salud (Requerido por la rúbrica)
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'up', message: 'Servidor activo y operando correctamente 🚀' });
-});
-
-// Ruta de prueba inicial anterior
-app.get('/ping', (req, res) => {
-    res.json({ status: "success", message: "Plataforma de eventos online 🚀" });
+    res.json({ status: 'up', message: 'Servidor activo y operando correctamente.' });
 });
 
 export default app;

@@ -1,22 +1,34 @@
 import { Router } from 'express';
 import passport from 'passport';
 import { login, getSessionProfile, logout } from '../controllers/session.controller.js';
+import { authMiddleware } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
-// 1️⃣ REGISTRO (Ya no necesita controlador externo, Passport hace todo)
+/**
+ * Registro Público de Usuarios
+ * Filtra el body para asegurar que las altas externas tengan rol 'user' por defecto.
+ */
 router.post('/register', 
+    (req, res, next) => {
+        if (req.body.role) {
+            req.body.role = 'user'; 
+        }
+        next();
+    },
     passport.authenticate('register', { session: false, failureRedirect: '/api/sessions/fail-register' }), 
     async (req, res) => {
-        res.status(201).json({ status: "success", message: "🎉 ¡Usuario registrado con éxito!" });
+        res.status(201).json({ status: "success", message: "Usuario registrado con éxito." });
     }
 );
 
 router.get('/fail-register', (req, res) => {
-    res.status(400).json({ status: "error", message: "Error al registrar: El email ya existe o faltan datos." });
+    res.status(400).json({ status: "error", message: "Error al registrar: El email ya existe o los datos son inválidos." });
 });
 
-// 2️⃣ LOGIN (Passport valida credenciales, si da OK, salta al controlador 'login')
+/**
+ * Autenticación y Login
+ */
 router.post('/login', 
     passport.authenticate('login', { session: false, failureRedirect: '/api/sessions/fail-login' }), 
     login
@@ -26,13 +38,17 @@ router.get('/fail-login', (req, res) => {
     res.status(401).json({ status: "error", message: "Credenciales inválidas." });
 });
 
-// 3️⃣ CURRENT (Passport lee la cookie, valida el JWT y salta a 'getSessionProfile')
+/**
+ * Perfil de la Sesión Actual
+ */
 router.get('/current', 
-    passport.authenticate('current', { session: false }), 
+    authMiddleware, 
     getSessionProfile
 );
 
-// 4️⃣ LOGOUT (Sigue directo, no toca Passport)
+/**
+ * Cierre de Sesión
+ */
 router.post('/logout', logout);
 
 export default router;

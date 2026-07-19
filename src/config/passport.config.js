@@ -7,16 +7,13 @@ const LocalStrategy = local.Strategy;
 
 const initializePassport = () => {
 
-    // ========================================================
-    // ESTRATEGIA DE REGISTRO ('register') - CENTRALIZADA
-    // ========================================================
     passport.use('register', new LocalStrategy(
         {
             passReqToCallback: true, 
             usernameField: 'email'   
         },
         async (req, username, password, done) => {
-            const { first_name, last_name, age, role } = req.body;
+            const { first_name, last_name, age } = req.body;
 
             try {
                 const userExists = await userService.getUserByEmail(username);
@@ -25,8 +22,6 @@ const initializePassport = () => {
                     return done(null, false, { message: 'El correo electrónico ya está registrado.' });
                 }
 
-                // 🌟 CAMBIO 1: Agregamos 'await' porque 'createHash' es asíncrona.
-                // Si no, guardábamos una promesa vacía en vez de la contraseña real.
                 const hashedPassword = await createHash(password);
 
                 const newUser = {
@@ -34,8 +29,8 @@ const initializePassport = () => {
                     last_name,
                     email: username,
                     age,
-                    password: hashedPassword, // Ahora sí tiene el texto del hash listo
-                    role: role || 'user' 
+                    password: hashedPassword,
+                    role: 'user' // Garantiza que no se inyecten roles privilegias desde el body
                 };
 
                 const result = await userService.createUser(newUser);
@@ -47,9 +42,6 @@ const initializePassport = () => {
         }
     ));
 
-    // ========================================================
-    // ESTRATEGIA DE LOGIN ('login')
-    // ========================================================
     passport.use('login', new LocalStrategy(
         { usernameField: 'email' },
         async (username, password, done) => {
@@ -59,9 +51,6 @@ const initializePassport = () => {
                     return done(null, false, { message: 'Usuario no encontrado.' });
                 }
 
-                // 🌟 CAMBIO 2: Agregamos 'await' para esperar la comparación de bcrypt.
-                // Además, invertimos el orden de parámetros: pasamos el password plano que
-                // ingresó el usuario primero, y el hash de la base de datos segundo.
                 const passwordValido = await isValidPassword(password, user.password);
                 
                 if (!passwordValido) {
@@ -75,7 +64,6 @@ const initializePassport = () => {
         }
     ));
 
-    // Serialización y deserialización
     passport.serializeUser((user, done) => {
         done(null, user._id);
     });
