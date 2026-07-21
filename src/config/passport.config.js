@@ -1,12 +1,25 @@
 import passport from 'passport';
 import local from 'passport-local';
+import jwt from 'passport-jwt';
 import { userService } from '../services/index.js'; 
 import { createHash, isValidPassword } from '../utils/hash.js'; 
 
 const LocalStrategy = local.Strategy;
+const JWTStrategy = jwt.Strategy;
+const ExtractJWT = jwt.ExtractJwt;
+
+// Función aux para extraer el JWT directamente desde la cookie HTTP-Only
+const cookieExtractor = (req) => {
+    let token = null;
+    if (req && req.cookies) {
+        token = req.cookies['currentUser']; // Nombre de la cookie donde guardamos el JWT
+    }
+    return token;
+};
 
 const initializePassport = () => {
 
+    // 1. Estrategia de Registro Local
     passport.use('register', new LocalStrategy(
         {
             passReqToCallback: true, 
@@ -30,7 +43,7 @@ const initializePassport = () => {
                     email: username,
                     age,
                     password: hashedPassword,
-                    role: 'user' // Garantiza que no se inyecten roles privilegias desde el body
+                    role: 'user' // Garantiza que no se inyecten roles privilegiados desde el body
                 };
 
                 const result = await userService.createUser(newUser);
@@ -42,6 +55,7 @@ const initializePassport = () => {
         }
     ));
 
+    // 2. Estrategia de Login Local
     passport.use('login', new LocalStrategy(
         { usernameField: 'email' },
         async (username, password, done) => {
@@ -58,6 +72,22 @@ const initializePassport = () => {
                 }
 
                 return done(null, user);
+            } catch (error) {
+                return done(error);
+            }
+        }
+    ));
+
+    // 3. Estrategia JWT ('current') 👈 ¡ACÁ ESTABA LO QUE FALTABA!
+    passport.use('current', new JWTStrategy(
+        {
+            jwtFromRequest: ExtractJWT.fromExtractors([cookieExtractor]),
+            secretOrKey: process.env.JWT_SECRET || 'secretCoder'
+        },
+        async (jwt_payload, done) => {
+            try {
+                // El payload del JWT contiene los datos del usuario extraídos de la cookie
+                return done(null, jwt_payload);
             } catch (error) {
                 return done(error);
             }
