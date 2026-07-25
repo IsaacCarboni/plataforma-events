@@ -7,15 +7,15 @@ const router = Router();
 
 /**
  * Registro Público de Usuarios
- * Filtra el body para asegurar que las altas externas tengan rol 'user' por defecto.
+ * (Comentamos temporalmente el filtro de rol para permitir registrar 'organizer' desde Postman)
  */
 router.post('/register', 
-    (req, res, next) => {
+    /* (req, res, next) => {
         if (req.body.role) {
             req.body.role = 'user'; 
         }
         next();
-    },
+    }, */
     passport.authenticate('register', { session: false, failureRedirect: '/api/sessions/fail-register' }), 
     async (req, res) => {
         res.status(201).json({ status: "success", message: "Usuario registrado con éxito." });

@@ -1,42 +1,65 @@
 import { Schema, model } from 'mongoose';
+import mongoosePaginate from 'mongoose-paginate-v2';
 
-// El molde real para la gestión de eventos de la plataforma
-const eventSchema = new Schema({
-    title: { 
-        type: String, 
-        required: true // Ej: "Conferencia Backend II", "Masterclass Node.js"
+const eventSchema = new Schema(
+  {
+    title: {
+      type: String,
+      required: [true, 'El título del evento es obligatorio.'],
+      trim: true,
     },
-    description: { 
-        type: String, 
-        required: true // Detalle del evento
+    description: {
+      type: String,
+      required: [true, 'La descripción es obligatoria.'],
+      trim: true,
     },
-    date: { 
-        type: Date, 
-        required: true // Fecha y hora de realización
+    category: {
+      type: String,
+      required: [true, 'La categoría es obligatoria.'],
+      trim: true,
+      index: true, // Índice para acelerar filtros por categoría
     },
-    location: { 
-        type: String, 
-        required: true // Ej: "Modalidad Virtual" o "Auditorio Coder"
+    date: {
+      type: Date,
+      required: [true, 'La fecha del evento es obligatoria.'],
     },
-    capacity: { 
-        type: Number, 
-        required: true // Cupos máximos disponibles para inscripciones
+    location: {
+      type: String,
+      required: [true, 'La ubicación es obligatoria.'],
+      trim: true,
     },
-    // 🌟 NUEVO: Vinculamos el evento con el ID del usuario (organizer/admin) que lo crea.
-    // Esto nos permite cumplir con el criterio de que un organizer solo modifique sus propios eventos.
-    organizer: { 
-        type: Schema.Types.ObjectId, 
-        ref: 'users', 
-        required: true 
+    capacity: {
+      type: Number,
+      required: [true, 'La capacidad es obligatoria.'],
+      min: [1, 'La capacidad debe ser mayor a 0.'],
     },
-    status: { 
-        type: String, 
-        enum: ['draft', 'published', 'cancelled'], 
-        default: 'draft' // Estado del evento para el control de flujo
-    }
-}, { 
-    timestamps: true // Registra cuándo se creó y modificó el evento
-});
+    price: {
+      type: Number,
+      required: [true, 'El precio es obligatorio.'],
+      min: [0, 'El precio no puede ser negativo.'],
+      default: 0,
+    },
+    status: {
+      type: String,
+      enum: {
+        values: ['draft', 'published', 'cancelled', 'finished'],
+        message: '{VALUE} no es un estado válido. Usa: draft, published, cancelled o finished.',
+      },
+      default: 'draft',
+      index: true,
+    },
+    organizer: {
+      type: Schema.Types.ObjectId,
+      ref: 'users', // Referencia exacta al modelo User
+      required: [true, 'El organizador es obligatorio.'],
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
-// Exportamos el modelo con consistencia total entre variable y colección
+// Plugin para paginación automática (GET /api/events con page, limit, sort)
+eventSchema.plugin(mongoosePaginate);
+
 export const EventModel = model('events', eventSchema);

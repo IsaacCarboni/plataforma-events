@@ -1,15 +1,13 @@
 import { generateToken } from '../utils/jwt.js'; 
 
-// 1️⃣ REGISTER: Ya no lo exportamos acá porque lo maneja directamente Passport en las rutas.
-
-// 2️⃣ LOGIN: Passport ya validó el usuario y nos lo deja servido en req.user
+// 1️⃣ LOGIN: Passport ya validó el usuario y lo deja listo en req.user
 export const login = async (req, res) => {
     try {
         if (!req.user) {
             return res.status(401).json({ status: 'error', message: 'Credenciales inválidas' });
         }
 
-        // Armamos el payload para el JWT con los datos que nos dio Passport
+        // Armamos el payload para el JWT respetando el rol del usuario de la BD
         const userPayload = {
             id: req.user._id,
             email: req.user.email,
@@ -18,15 +16,13 @@ export const login = async (req, res) => {
             role: req.user.role || 'user'
         };
 
-        // Generamos el token seguro usando tu función de jwt.js
         const token = generateToken(userPayload);
 
-        // Enviamos el token mediante tu cookie HTTP Only ultra segura
         res.cookie('currentUser', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-            maxAge: 3600000 // 1 hora de vida
+            maxAge: 3600000 // 1 hora
         });
 
         res.status(200).json({ status: 'success', message: '🎉 Login exitoso con Passport' });
@@ -35,13 +31,12 @@ export const login = async (req, res) => {
     }
 };
 
-// 3️⃣ CURRENT: Ajustado estrictamente para cumplir el contrato exigido por la rúbrica
+// 2️⃣ CURRENT: Perfil obtenido desde la sesión/token
 export const getSessionProfile = async (req, res) => {
     if (!req.user) {
         return res.status(401).json({ status: 'error', message: 'No hay una sesión activa o el token expiró' });
     }
     
-    // CORRECCIÓN CONTRATO EXIGIDO: Estructuramos la respuesta para devolver solo los campos obligatorios y limpios
     res.status(200).json({ 
         status: 'success', 
         payload: {
@@ -52,7 +47,7 @@ export const getSessionProfile = async (req, res) => {
     });
 };
 
-// 4️⃣ LOGOUT: Limpia la cookie del navegador
+// 3️⃣ LOGOUT: Limpia la cookie del navegador
 export const logout = async (req, res) => {
     res.clearCookie('currentUser');
     res.status(200).json({ status: 'success', message: 'Sesión cerrada correctamente' });

@@ -12,7 +12,7 @@ const ExtractJWT = jwt.ExtractJwt;
 const cookieExtractor = (req) => {
     let token = null;
     if (req && req.cookies) {
-        token = req.cookies['currentUser']; // Nombre de la cookie donde guardamos el JWT
+        token = req.cookies['currentUser'];
     }
     return token;
 };
@@ -26,7 +26,7 @@ const initializePassport = () => {
             usernameField: 'email'   
         },
         async (req, username, password, done) => {
-            const { first_name, last_name, age } = req.body;
+            const { first_name, last_name, age, role } = req.body;
 
             try {
                 const userExists = await userService.getUserByEmail(username);
@@ -43,7 +43,7 @@ const initializePassport = () => {
                     email: username,
                     age,
                     password: hashedPassword,
-                    role: 'user' // Garantiza que no se inyecten roles privilegiados desde el body
+                    role: role || 'user' // 👈 Permite recibir 'organizer' o 'admin' desde el body (default: 'user')
                 };
 
                 const result = await userService.createUser(newUser);
@@ -78,7 +78,7 @@ const initializePassport = () => {
         }
     ));
 
-    // 3. Estrategia JWT ('current') 👈 ¡ACÁ ESTABA LO QUE FALTABA!
+    // 3. Estrategia JWT ('current')
     passport.use('current', new JWTStrategy(
         {
             jwtFromRequest: ExtractJWT.fromExtractors([cookieExtractor]),
@@ -86,7 +86,6 @@ const initializePassport = () => {
         },
         async (jwt_payload, done) => {
             try {
-                // El payload del JWT contiene los datos del usuario extraídos de la cookie
                 return done(null, jwt_payload);
             } catch (error) {
                 return done(error);

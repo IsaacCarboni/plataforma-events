@@ -1,103 +1,135 @@
-import { EventModel } from '../models/event.model.js';
+import { EventService } from '../services/event.service.js';
 
-// 1. Lógica efectiva para CREAR un evento nuevo
-export const createEvent = async (req, res) => {
+/**
+ * Controller para la gestión del módulo de Eventos.
+ * Maneja las peticiones HTTP y delega la lógica de negocio al EventService.
+ */
+export class EventController {
+  /**
+   * POST /api/events
+   * Crea un nuevo evento en la plataforma.
+   * Acceso: Solo usuarios autenticados con rol 'organizer' o 'admin'.
+   */
+  static async createEvent(req, res) {
     try {
-        // Desestructuramos todos los campos necesarios que pusimos en el modelo
-        const { title, description, date, capacity, location, price } = req.body;
+      // Extraemos el ID del usuario directamente de la sesión/token (req.user)
+      const userId = req.user?._id || req.user?.id;
 
-        // Pasamos todos los datos recibidos por el molde del modelo
-        // 🌟 NUEVO: Inyectamos dinámicamente el ID del usuario logueado como organizador
-        const newEvent = new EventModel({ 
-            title, 
-            description, 
-            date, 
-            capacity, 
-            location, 
-            price,
-            organizer: req.user.id || req.user._id 
-        });
-        
-        // Guardamos de forma asíncrona en la base de datos
-        await newEvent.save();
+      const newEvent = await EventService.createEvent(req.body, userId);
 
-        // Si todo sale bien, respondemos con código 201 (Creado)
-        res.status(201).json({
-            status: 'success',
-            message: '🎉 ¡Evento creado con éxito!',
-            data: newEvent
-        });
+      return res.status(201).json({
+        status: 'success',
+        payload: newEvent,
+      });
     } catch (error) {
-        // Si falta un dato obligatorio (como location) o hay error, cae acá
-        res.status(400).json({
-            status: 'error',
-            message: '❌ No se pudo crear el evento',
-            error: error.message
-        });
+      return res.status(error.statusCode || 500).json({
+        status: 'error',
+        message: error.message || 'Error interno al crear el evento.',
+      });
     }
-};
+  }
 
-// 2. Lógica efectiva para TRAER todos los eventos
-export const getEvents = async (req, res) => {
+  /**
+   * GET /api/events
+   * Recupera una lista paginada y filtrada de eventos.
+   * Acceso: Público.
+   */
+  static async getEvents(req, res) {
     try {
-        // Usamos EventModel que es tu molde importado arriba
-        const events = await EventModel.find();
+      const result = await EventService.getEvents(req.query);
 
-        // Si todo sale bien, respondemos con código 200 (OK) y la data
-        res.status(200).json({
-            status: 'success',
-            message: '🎉 Eventos obtenidos con éxito',
-            data: events
-        });
+      return res.status(200).json({
+        status: 'success',
+        payload: result.data,
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages,
+        hasPrevPage: result.hasPrevPage,
+        hasNextPage: result.hasNextPage,
+      });
     } catch (error) {
-        // Atajamos cualquier drama que pueda pasar con la base de datos
-        res.status(500).json({
-            status: 'error',
-            message: '❌ No se pudieron obtener los eventos',
-            error: error.message
-        });
+      return res.status(error.statusCode || 500).json({
+        status: 'error',
+        message: error.message || 'Error al recuperar los eventos.',
+      });
     }
-};
+  }
 
-// 3. 🌟 NUEVO: Lógica efectiva para MODIFICAR o CANCELAR un evento
-export const updateEvent = async (req, res) => {
+  /**
+   * GET /api/events/:id
+   * Obtiene los detalles de un evento específico por su ID.
+   * Acceso: Público.
+   */
+  static async getEventById(req, res) {
     try {
-        const { id } = req.params;
-        
-        // Buscamos el evento existente en la base de datos
-        const event = await EventModel.findById(id);
+      const { id } = req.params;
+      const event = await EventService.getEventById(id);
 
-        if (!event) {
-            return res.status(404).json({ 
-                status: 'error', 
-                message: '❌ Evento no encontrado' 
-            });
-        }
-
-        // 🛡️ CONTROL DE PROPIEDAD DEL RECURSO (Exigido por la rúbrica):
-        // Si el usuario es 'organizer', verificamos que el ObjectId del creador coincida con su ID de sesión.
-        // Si es 'admin', este filtro se saltea y puede modificar cualquier evento.
-        const userId = req.user.id || req.user._id;
-        if (req.user.role === 'organizer' && event.organizer.toString() !== userId.toString()) {
-            return res.status(403).json({ 
-                status: 'error', 
-                message: '❌ Acción denegada: Un organizador solo puede modificar sus propios eventos.' 
-            });
-        }
-
-        // Si pasó el control, actualizamos de forma asíncrona devolviendo el documento nuevo
-        const updatedEvent = await EventModel.findByIdAndUpdate(id, req.body, { new: true });
-        
-        res.status(200).json({ 
-            status: 'success', 
-            message: '🎉 ¡Evento modificado con éxito!', 
-            data: updatedEvent 
-        });
+      return res.status(200).json({
+        status: 'success',
+        payload: event,
+      });
     } catch (error) {
-        res.status(400).json({ 
-            status: 'error', 
-            message: '❌ No se pudo modificar el evento',
-            error: error.message 
-        });
+      return res.status(error.statusCode || 500).json({
+        status: 'error',
+        message: error.message || 'Error al consultar el evento.',
+      });
     }
-};
+  }
+
+  /**
+   * PUT /api/events/:id
+   * Actualiza la información de un evento existente.
+   * Acceso: Solo el creador del evento ('organizer') o un 'admin'.
+   */
+  static async updateEvent(req, res) {
+    try {
+      const { id } = req.params;
+      const updatedEvent = await EventService.updateEvent(id, req.body, req.user);
+
+      return res.status(200).json({
+        status: 'success',
+        message: 'Evento actualizado correctamente.',
+        payload: updatedEvent,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || 500).json({
+        status: 'error',
+        message: error.message || 'Error al actualizar el evento.',
+      });
+    }
+  }
+
+  /**
+   * PATCH /api/events/:id/status
+   * Cambia el estado del evento ('draft', 'published', 'cancelled', 'finished').
+   * Acceso: Solo el creador del evento ('organizer') o un 'admin'.
+   */
+  static async changeStatus(req, res) {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      if (!status) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Debes proporcionar el nuevo campo status en el cuerpo de la petición.',
+        });
+      }
+
+      const updatedEvent = await EventService.changeStatus(id, status, req.user);
+
+      return res.status(200).json({
+        status: 'success',
+        message: `El estado del evento fue actualizado a '${status}'.`,
+        payload: updatedEvent,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || 500).json({
+        status: 'error',
+        message: error.message || 'Error al cambiar el estado del evento.',
+      });
+    }
+  }
+}
