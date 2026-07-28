@@ -1,8 +1,3 @@
-Acá tenés el README.md 100% completo, actualizado e impecable para la Pre-entrega 7.
-
-Incluye todas las correcciones de formato, el módulo de inscripciones/tickets, las variables de Nodemailer, el flujo de cupos y las tablas de permisos/endpoints sin fallas sintácticas de Markdown:
-
-Markdown
 # 🚀 Plataforma de Eventos e Inscripciones
 
 API REST para la gestión integrada de eventos, usuarios e inscripciones en tiempo real con control dinámico de cupos y notificaciones por email, construida con **Node.js**, **Express** y **MongoDB Atlas**.
