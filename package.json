@@ -16,6 +16,7 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.7.1",
     "mongoose-paginate-v2": "^1.9.5",
+    "nodemailer": "^9.0.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0"
