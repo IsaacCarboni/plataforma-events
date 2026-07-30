@@ -1,6 +1,4 @@
-Acá tenés el README.md completo, impecable y con la nueva regla de negocio de validación de fecha integrada en la sección correspondiente, listo para copiar y pegar sin errores sintácticos de Markdown.
 
-Markdown
 # 🚀 Plataforma de Eventos e Inscripciones
 
 API REST para la gestión integrada de eventos, usuarios e inscripciones en tiempo real con control dinámico de cupos y notificaciones por email, construida con **Node.js**, **Express** y **MongoDB Atlas**.
