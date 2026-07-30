@@ -1,3 +1,6 @@
+Acá tenés el README.md completo, impecable y con la nueva regla de negocio de validación de fecha integrada en la sección correspondiente, listo para copiar y pegar sin errores sintácticos de Markdown.
+
+Markdown
 # 🚀 Plataforma de Eventos e Inscripciones
 
 API REST para la gestión integrada de eventos, usuarios e inscripciones en tiempo real con control dinámico de cupos y notificaciones por email, construida con **Node.js**, **Express** y **MongoDB Atlas**.
@@ -36,7 +39,7 @@ El proyecto implementa una **arquitectura por capas independientes** (Controller
 ## ⚙️ Reglas de Negocio Principales
 
 1.  **Asignación de Creador/Organizador:** El campo `organizer` se inyecta automáticamente desde la identidad autenticada (`req.user`). No se permite la manipulación manual de dicho campo.
-2.  **Validación Temporal:** Se rechaza la creación o modificación de eventos cuya fecha sea pasada o no válida.
+2.  **Validación Temporal y Expiración:** Se rechaza la creación o modificación de eventos cuya fecha sea pasada. Asimismo, se bloquean las inscripciones a eventos cuya fecha de realización ya haya finalizado (`event.date < new Date()`).
 3.  **Capacidad y Precio:** Reglas estrictas que exigen `capacity > 0` y `price >= 0`.
 4.  **Control de Cupos Dinámico:** El cálculo de vacantes activas solo contabiliza tickets con estado distinto a `'cancelled'`. Al cancelar una reserva, el cupo se libera automáticamente.
 5.  **Prevención de Duplicados:** Un usuario no puede generar más de una inscripción activa simultánea para el mismo evento.
@@ -89,7 +92,7 @@ El sistema discrimina las acciones según tres roles jerárquicos:
 
 | Método | Endpoint | Acceso | Descripción |
 | :--- | :--- | :--- | :--- |
-| **POST** | `/api/events/:eid/tickets` | Autenticado | Inscripción a un evento (controla cupos y envía email). |
+| **POST** | `/api/events/:eid/tickets` | Autenticado | Inscripción a un evento (valida cupos, fecha vigente y envía email). |
 | **GET** | `/api/tickets/my-tickets` | Autenticado | Consulta de las inscripciones del usuario en sesión (`populate`). |
 | **GET** | `/api/events/:eid/tickets` | Creador / `admin` | Consulta de la lista de inscriptos a un evento propio. |
 | **PATCH** | `/api/tickets/:tid/cancel` | Dueño / `admin` | Cancelación de reserva (borrado lógico y liberación de cupo). |
@@ -126,7 +129,7 @@ MAIL_USER=tu_email@gmail.com
 MAIL_PASS=tu_contraseña_de_aplicacion
 MAIL_FROM="Plataforma Eventos <tu_email@gmail.com>"
 🚫 Manejo de Errores Estándar
-400 Bad Request: Fallas de validación (cupos insuficientes, inscripciones duplicadas, evento no publicado).
+400 Bad Request: Fallas de validación (cupos insuficientes, eventos finalizados, inscripciones duplicadas, evento no publicado).
 
 401 Unauthorized: Ausencia o invalidez del token JWT / cookie de sesión.
 

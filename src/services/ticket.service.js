@@ -5,7 +5,7 @@ import crypto from 'crypto';
 
 export class TicketService {
   /**
-   * Crea un nuevo ticket con validación estricta de cupos, estados y duplicados
+   * Crea un nuevo ticket con validación estricta de cupos, estados, fecha y duplicados
    */
   static async createTicket(eventId, user, quantity) {
     const numQuantity = Number(quantity);
@@ -26,6 +26,14 @@ export class TicketService {
       throw {
         statusCode: 400,
         message: `No es posible inscribirse. El evento se encuentra en estado '${event.status}'.`,
+      };
+    }
+
+    // 3.1. 🛑 NUEVA VALIDACIÓN: Verificar si el evento ya finalizó por fecha
+    if (new Date(event.date) < new Date()) {
+      throw {
+        statusCode: 400,
+        message: 'No es posible inscribirse. El evento ya ha finalizado.',
       };
     }
 
