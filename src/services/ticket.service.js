@@ -1,7 +1,13 @@
-import { TicketModel } from '../models/ticket.model.js';
-import { EventModel } from '../models/event.model.js';
+import { TicketDAO } from '../dao/ticket.dao.js';
+import { EventDAO } from '../dao/event.dao.js';
+import { TicketRepository } from '../repositories/ticket.repository.js';
+import { EventRepository } from '../repositories/event.repository.js';
 import { MailService } from './mail.service.js';
 import crypto from 'crypto';
+
+// Instanciamos los repositorios mediante sus DAOs correspondientes
+const ticketRepository = new TicketRepository(new TicketDAO());
+const eventRepository = new EventRepository(new EventDAO());
 
 export class TicketService {
   /**
@@ -15,8 +21,8 @@ export class TicketService {
       throw { statusCode: 400, message: 'Debes solicitar al menos 1 entrada válida.' };
     }
 
-    // 2. Validar existencia del evento
-    const event = await EventModel.findById(eventId);
+    // 2. Validar existencia del evento (vía Repository)
+    const event = await eventRepository.getEventById(eventId);
     if (!event) {
       throw { statusCode: 404, message: 'El evento solicitado no existe.' };
     }
@@ -29,7 +35,7 @@ export class TicketService {
       };
     }
 
-    // 3.1. 🛑 NUEVA VALIDACIÓN: Verificar si el evento ya finalizó por fecha
+    // 3.1. 🛑 Validar si el evento ya finalizó por fecha
     if (new Date(event.date) < new Date()) {
       throw {
         statusCode: 400,
@@ -37,27 +43,17 @@ export class TicketService {
       };
     }
 
-    // 4. Validar si el usuario ya tiene un ticket activo para este evento (Duplicado)
-    const existingTicket = await TicketModel.findOne({
-      user: user._id,
-      event: eventId,
-      status: { $ne: 'cancelled' },
-    });
-
-    if (existingTicket) {
+    // 4. Validar si el usuario ya tiene un ticket activo (vía Repository)
+    const hasDuplicate = await ticketRepository.hasActiveTicket(user._id, eventId);
+    if (hasDuplicate) {
       throw {
         statusCode: 400,
         message: 'Ya cuentas con una inscripción activa para este evento.',
       };
     }
 
-    // 5. Calcular cupos disponibles (ignorando tickets cancelados)
-    const activeTickets = await TicketModel.find({
-      event: eventId,
-      status: { $ne: 'cancelled' },
-    });
-
-    const occupiedCapacity = activeTickets.reduce((acc, ticket) => acc + ticket.quantity, 0);
+    // 5. Calcular cupos disponibles (vía Repository)
+    const occupiedCapacity = await ticketRepository.getOccupiedCapacity(eventId);
     const availableCapacity = event.capacity - occupiedCapacity;
 
     if (numQuantity > availableCapacity) {
@@ -70,8 +66,8 @@ export class TicketService {
     // 6. Generar código de reserva único
     const reservationCode = crypto.randomBytes(4).toString('hex').toUpperCase();
 
-    // 7. Crear el Ticket
-    const newTicket = await TicketModel.create({
+    // 7. Crear el Ticket (vía Repository - devuelve TicketDTO)
+    const newTicket = await ticketRepository.createTicket({
       user: user._id,
       event: eventId,
       quantity: numQuantity,
@@ -92,20 +88,17 @@ export class TicketService {
   }
 
   /**
-   * Obtiene los tickets del usuario autenticado (con populate de datos del evento)
+   * Obtiene los tickets del usuario autenticado (vía Repository - devuelven DTOs)
    */
   static async getMyTickets(userId) {
-    return await TicketModel.find({ user: userId })
-      .populate('event', 'title date location price status')
-      .sort({ createdAt: -1 })
-      .exec();
+    return await ticketRepository.getTicketsByUser(userId);
   }
 
   /**
    * Obtiene todos los tickets de un evento (solo organizer del evento o admin)
    */
   static async getEventTickets(eventId, user) {
-    const event = await EventModel.findById(eventId);
+    const event = await eventRepository.getEventById(eventId);
     if (!event) {
       throw { statusCode: 404, message: 'El evento no existe.' };
     }
@@ -121,23 +114,20 @@ export class TicketService {
       };
     }
 
-    return await TicketModel.find({ event: eventId })
-      .populate('user', 'first_name last_name email')
-      .sort({ createdAt: -1 })
-      .exec();
+    return await ticketRepository.getTicketsByEvent(eventId);
   }
 
   /**
    * Cancela un ticket (borrado lógico) y libera cupo automáticamente
    */
   static async cancelTicket(ticketId, user) {
-    const ticket = await TicketModel.findById(ticketId);
-    if (!ticket) {
+    const ticketDoc = await ticketRepository.getTicketById(ticketId);
+    if (!ticketDoc) {
       throw { statusCode: 404, message: 'El ticket solicitado no existe.' };
     }
 
     // Validar permisos: dueño del ticket o rol admin
-    const isOwner = ticket.user.toString() === user._id.toString();
+    const isOwner = ticketDoc.user.toString() === user._id.toString();
     const isAdmin = user.role === 'admin';
 
     if (!isOwner && !isAdmin) {
@@ -147,14 +137,13 @@ export class TicketService {
       };
     }
 
-    if (ticket.status === 'cancelled') {
+    if (ticketDoc.status === 'cancelled') {
       throw { statusCode: 400, message: 'Este ticket ya se encuentra cancelado.' };
     }
 
-    ticket.status = 'cancelled';
-    ticket.cancelledAt = new Date();
-    await ticket.save();
+    ticketDoc.status = 'cancelled';
+    ticketDoc.cancelledAt = new Date();
 
-    return ticket;
+    return await ticketRepository.saveTicket(ticketDoc);
   }
 }

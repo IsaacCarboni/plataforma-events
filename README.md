@@ -1,47 +1,50 @@
-
 # 🚀 Plataforma de Eventos e Inscripciones
 
-API REST para la gestión integrada de eventos, usuarios e inscripciones en tiempo real con control dinámico de cupos y notificaciones por email, construida con **Node.js**, **Express** y **MongoDB Atlas**.
+API REST profesional para la gestión integrada de eventos, usuarios e inscripciones en tiempo real con control dinámico de cupos y notificaciones por email, construida con **Node.js**, **Express** y **MongoDB Atlas**.
 
-El proyecto implementa una **arquitectura por capas independientes** (Controllers, Services, DAO/Repositories, Models, Middlewares) garantizando la separación de responsabilidades, alta escalabilidad y fácil mantenimiento.
+El proyecto implementa una **Arquitectura en Capas Independientes y Desacopladas** (Controllers, Services, Repositories, DAO, DTOs, Models, Middlewares) siguiendo los estándares de diseño Backend modernos, garantizando separación de responsabilidades, seguridad, alta escalabilidad y fácil mantenimiento.
 
 ---
 
 ## 🛠️ Tecnologías Utilizadas
 
-*   **Node.js** - Entorno de ejecución de JavaScript en el servidor (ES Modules).
-*   **Express.js** - Framework web para el desarrollo de la API REST.
-*   **MongoDB Atlas & Mongoose** - Base de datos NoSQL y modelado de datos con validaciones de schema.
-*   **Mongoose Paginate V2** - Plugin de paginación para consultas optimizadas.
-*   **Passport.js & JWT** - Estrategia centralizada para autenticación segura mediante tokens.
-*   **Cookie-parser** - Gestión de cookies criptográficas `HTTP-Only` del lado del cliente.
-*   **Nodemailer** - Servicio de envío automático de correos electrónicos transaccionales.
-*   **Bcrypt** - Hashing seguro de contraseñas mediante salting.
-*   **Dotenv** - Manejo seguro de variables de entorno.
+* **Node.js** - Entorno de ejecución para JavaScript en el servidor (ES Modules nativo).
+* **Express.js** - Framework web para el diseño y construcción de la API REST.
+* **MongoDB Atlas & Mongoose** - Base de datos NoSQL en la nube y modelado de datos mediante Schemas estrictos.
+* **Mongoose Paginate V2** - Plugin de paginación para consultas de catálogo optimizadas.
+* **Passport.js & JWT** - Estrategia centralizada para autenticación segura basada en tokens.
+* **Cookie-Parser** - Gestión de credenciales mediante cookies seguras `HTTP-Only` y `SameSite`.
+* **Nodemailer** - Servicio transaccional para envío automático de correos de confirmación.
+* **Bcrypt** - Algoritmo de hashing criptográfico para resguardo de contraseñas.
+* **Dotenv** - Gestión centralizada de variables de entorno.
 
 ---
 
 ## 📁 Arquitectura por Capas
 
-*   `src/config/` - Configuración global de conexión a MongoDB y estrategias de Passport.
-*   `src/controllers/` - Captura de peticiones HTTP, parseo de parámetros y formateo de respuestas.
-*   `src/services/` - Núcleo del sistema: reglas de negocio, control de cupos y servicio de correo (`MailService`).
-*   `src/dao/` / `src/repositories/` - Abstracción para el acceso y persistencia de datos.
-*   `src/models/` - Esquemas y modelos Mongoose (`User`, `Event`, `Ticket`).
-*   `src/middlewares/` - Autenticación, control de acceso basado en roles (RBAC) e interceptores.
-*   `src/routes/` - Definición de endpoints y mapeo de middlewares.
-*   `src/utils/` - Funciones auxiliares de hashing y tokens.
+La estructura del código sigue el patrón de diseño por capas recomendado para sistemas empresariales:
+
+* `src/config/` - Configuración global de conexión a base de datos (`db.config.js`) y estrategias de Passport (`passport.config.js`).
+* `src/controllers/` - Manejo de peticiones HTTP, extracción de parámetros/queries y formateo de respuestas sanitizadas.
+* `src/services/` - Capa de negocio pura: validaciones de fechas, control de cupos, reglas operativas y servicio de correo (`MailService`).
+* `src/repositories/` - Capa de abstracción intermedia para la orquestación de datos y aplicación de DTOs.
+* `src/dtos/` - Data Transfer Objects (`UserDTO`, `EventDTO`, `TicketDTO`) para filtrar y proteger datos sensibles expuestos a la API.
+* `src/dao/` - Data Access Objects para la interacción directa con la base de datos MongoDB.
+* `src/models/` - Esquemas y modelos Mongoose (`user.model.js`, `event.model.js`, `ticket.model.js`).
+* `src/middlewares/` - Middlewares de autenticación, control de accesos por roles (RBAC) e interceptores.
+* `src/routes/` - Definición de endpoints y desacople de rutas (`session.routes.js`, `event.routes.js`, `ticket.routes.js`).
+* `src/utils/` - Helpers de hashing, firma de JWTs y utilidades generales.
 
 ---
 
 ## ⚙️ Reglas de Negocio Principales
 
-1.  **Asignación de Creador/Organizador:** El campo `organizer` se inyecta automáticamente desde la identidad autenticada (`req.user`). No se permite la manipulación manual de dicho campo.
-2.  **Validación Temporal y Expiración:** Se rechaza la creación o modificación de eventos cuya fecha sea pasada. Asimismo, se bloquean las inscripciones a eventos cuya fecha de realización ya haya finalizado (`event.date < new Date()`).
-3.  **Capacidad y Precio:** Reglas estrictas que exigen `capacity > 0` y `price >= 0`.
-4.  **Control de Cupos Dinámico:** El cálculo de vacantes activas solo contabiliza tickets con estado distinto a `'cancelled'`. Al cancelar una reserva, el cupo se libera automáticamente.
-5.  **Prevención de Duplicados:** Un usuario no puede generar más de una inscripción activa simultánea para el mismo evento.
-6.  **Borrado Lógico y Estado:** No existen eliminaciones físicas en la base de datos. Las cancelaciones de eventos o tickets se gestionan mediante un cambio de estado a `'cancelled'` registrando la fecha en `cancelledAt`.
+1. **Asignación de Creador/Organizador:** El campo `organizer` se inyecta automáticamente desde la identidad autenticada (`req.user`). Se bloquea la manipulación manual de dicho campo.
+2. **Validación Temporal y Expiración:** Se rechaza la creación o modificación de eventos cuya fecha sea pasada. Asimismo, se bloquean las inscripciones a eventos cuya fecha de realización ya haya transcurrido (`event.date < new Date()`).
+3. **Capacidad y Precio:** Reglas estrictas que exigen `capacity > 0` y `price >= 0`.
+4. **Control de Cupos Dinámico:** El cálculo de vacantes activas solo contabiliza tickets con estado distinto a `'cancelled'`. Al cancelar una reserva, el cupo se libera automáticamente.
+5. **Prevención de Duplicados:** Un usuario no puede generar más de una inscripción activa simultánea para el mismo evento.
+6. **Borrado Lógico y Estado:** No existen eliminaciones físicas en la base de datos. Las cancelaciones de eventos o tickets se gestionan mediante un cambio de estado a `'cancelled'` registrando la fecha exacta en `cancelledAt`.
 
 ---
 
@@ -73,7 +76,7 @@ El sistema discrimina las acciones según tres roles jerárquicos:
 | :--- | :--- | :--- | :--- |
 | **POST** | `/api/sessions/register` | Público | Registro de usuario (asigna rol `user` por defecto). |
 | **POST** | `/api/sessions/login` | Público | Autentica credenciales y emite cookie `HTTP-Only`. |
-| **GET** | `/api/sessions/current` | Autenticado | Retorna el perfil del usuario activo. |
+| **GET** | `/api/sessions/current` | Autenticado | Retorna el DTO con el perfil del usuario activo. |
 | **POST** | `/api/sessions/logout` | Autenticado | Destruye la cookie de sesión activa. |
 
 ### 📅 Módulo de Eventos (`/api/events`)
@@ -96,56 +99,49 @@ El sistema discrimina las acciones según tres roles jerárquicos:
 | **PATCH** | `/api/tickets/:tid/cancel` | Dueño / `admin` | Cancelación de reserva (borrado lógico y liberación de cupo). |
 
 #### 🔍 Parámetros de Búsqueda y Paginación (`GET /api/events`)
-*   `status`: Filtra por estado exacto (`draft`, `published`, `cancelled`, `finished`).
-*   `category`: Filtra por categoría de evento.
-*   `location`: Búsqueda parcial por ubicación (insensible a mayúsculas).
-*   `dateFrom` / `dateTo`: Filtro por rango de fechas (`YYYY-MM-DD`).
-*   `page`: Número de página a consultar (default: `1`).
-*   `limit`: Cantidad de registros por página (default: `10`).
-*   `sort`: Criterio de ordenamiento (ej: `date` o `-date`).
+* `status`: Filtra por estado exacto (`draft`, `published`, `cancelled`, `finished`).
+* `category`: Filtra por categoría de evento.
+* `location`: Búsqueda parcial por ubicación (insensible a mayúsculas/minúsculas).
+* `dateFrom` / `dateTo`: Filtro por rango de fechas (`YYYY-MM-DD`).
+* `page`: Número de página a consultar (por defecto: `1`).
+* `limit`: Cantidad de registros por página (por defecto: `10`).
+* `sort`: Criterio de ordenamiento (ej: `date` o `-date`).
+
+---
+
+## 🚫 Manejo de Errores Estándar
+
+La API responde utilizando códigos de estado HTTP estandarizados y mensajes explicativos:
+
+* **`400 Bad Request`**: Fallas de validación (cupos insuficientes, eventos pasados o finalizados, inscripciones duplicadas, evento no publicado).
+* **`401 Unauthorized`**: Ausencia o invalidez del token JWT o de la cookie de sesión.
+* **`403 Forbidden`**: Permisos insuficientes (p. ej., intentar modificar o consultar recursos de otro organizador).
+* **`404 Not Found`**: Evento, usuario o ticket inexistente en la base de datos.
+* **`500 Internal Server Error`**: Errores no controlados en el servidor o problemas de conectividad con la base de datos.
 
 ---
 
 ## ⚡ Guía de Prueba Rápida (Quick Start)
 
-1. **Registrar un usuario** en `POST /api/sessions/register`.
-2. **Iniciar sesión** en `POST /api/sessions/login` para recibir la cookie de sesión `HTTP-Only`.
-3. **Inscribirse a un evento** enviando `POST /api/events/:eid/tickets` con la cantidad deseada (`quantity`).
+1. **Registrar un usuario:** Enviar petición a `POST /api/sessions/register`.
+2. **Iniciar sesión:** Enviar credenciales a `POST /api/sessions/login` para recibir la cookie de sesión `HTTP-Only`.
+3. **Inscribirse a un evento:** Enviar `POST /api/events/:eid/tickets` especificando la cantidad deseada (`quantity`).
 4. **Verificar email:** Revisar la bandeja de entrada para verificar la recepción del correo de confirmación enviado vía Nodemailer.
-5. **Consultar mis entradas:** Ejecutar `GET /api/tickets/my-tickets` para comprobar la relación poblada (`populate`) con el evento.
+5. **Consultar mis entradas:** Ejecutar `GET /api/tickets/my-tickets` para comprobar la relación poblada (`populate`) formateada por el DTO.
 
 ---
 
-## ✉️ Configuración de Notificaciones (Nodemailer)
+## 🔧 Instalación y Configuración
 
-El sistema genera notificaciones por correo de forma automática tras completar cada reserva exitosamente. Requiere definir las siguientes variables en el entorno (`.env`):
-
-```env
-MAIL_HOST=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USER=tu_email@gmail.com
-MAIL_PASS=tu_contraseña_de_aplicacion
-MAIL_FROM="Plataforma Eventos <tu_email@gmail.com>"
-🚫 Manejo de Errores Estándar
-400 Bad Request: Fallas de validación (cupos insuficientes, eventos finalizados, inscripciones duplicadas, evento no publicado).
-
-401 Unauthorized: Ausencia o invalidez del token JWT / cookie de sesión.
-
-403 Forbidden: Permisos insuficientes (intentar cancelar un ticket ajeno o consultar inscriptos sin ser el organizador).
-
-404 Not Found: Evento o ticket inexistente en la base de datos.
-
-🔧 Instalación y Configuración
-Clonar el repositorio localmente:
-
-Bash
-git clone [https://github.com/IsaacCarboni/plataforma-events.git](https://github.com/IsaacCarboni/plataforma-events.git)
-cd plataforma-events
+1. **Clonar el repositorio localmente:**
+   ```bash
+   git clone [https://github.com/IsaacCarboni/plataforma-events.git](https://github.com/IsaacCarboni/plataforma-events.git)
+   cd plataforma-events
 Instalar las dependencias del proyecto:
 
 Bash
 npm install
-Crear un archivo .env en la raíz del proyecto basado en .env.example:
+Crear el archivo .env en la raíz del proyecto basado en .env.example:
 
 Fragmento de código
 PORT=8080

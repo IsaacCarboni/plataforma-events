@@ -4,12 +4,12 @@ const ticketSchema = new Schema(
   {
     user: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'users', // 👈 Corregido: Coincide exactamente con el modelo model('users', userSchema)
       required: [true, 'El ID de usuario es obligatorio.'],
     },
     event: {
       type: Schema.Types.ObjectId,
-      ref: 'Event',
+      ref: 'events', // 👈 Corregido: Coincide exactamente con el modelo model('events', eventSchema)
       required: [true, 'El ID de evento es obligatorio.'],
     },
     status: {
@@ -40,4 +40,4 @@ const ticketSchema = new Schema(
   }
 );
 
-export const TicketModel = model('Ticket', ticketSchema);
+export const TicketModel = model('tickets', ticketSchema); // 👈 Corregido: Nombre en minúscula y plural ('tickets')
