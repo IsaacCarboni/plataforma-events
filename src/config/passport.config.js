@@ -19,14 +19,14 @@ const cookieExtractor = (req) => {
 
 const initializePassport = () => {
 
-    // 1. Estrategia de Registro Local
+    // 1. Estrategia de Registro Local (Pública - Protegida contra escalado de roles)
     passport.use('register', new LocalStrategy(
         {
             passReqToCallback: true, 
             usernameField: 'email'   
         },
         async (req, username, password, done) => {
-            const { first_name, last_name, age, role } = req.body;
+            const { first_name, last_name, age } = req.body; // 🔒 Ignoramos 'role' del body
 
             try {
                 const userExists = await userService.getUserByEmail(username);
@@ -43,7 +43,7 @@ const initializePassport = () => {
                     email: username,
                     age,
                     password: hashedPassword,
-                    role: role || 'user' // 👈 Permite recibir 'organizer' o 'admin' desde el body (default: 'user')
+                    role: 'user' // 👈 Forzado a 'user'. Nadie se puede registrar como admin/organizer desde la ruta pública.
                 };
 
                 const result = await userService.createUser(newUser);

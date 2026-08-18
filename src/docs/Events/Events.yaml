@@ -1,0 +1,67 @@
+paths:
+  /api/events:
+    get:
+      summary: Obtener listado de eventos
+      tags:
+        - Events
+      description: Devuelve la lista completa de eventos disponibles.
+      responses:
+        '200':
+          description: Lista de eventos obtenida con éxito.
+    post:
+      summary: Crear un nuevo evento
+      tags:
+        - Events
+      description: Crea un nuevo evento en la plataforma.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventInput'
+      responses:
+        '201':
+          description: Evento creado exitosamente.
+        '401':
+          description: No autorizado.
+
+  /api/events/{eid}:
+    get:
+      summary: Obtener evento por ID
+      tags:
+        - Events
+      parameters:
+        - in: path
+          name: eid
+          required: true
+          schema:
+            type: string
+          description: ID del evento
+      responses:
+        '200':
+          description: Evento encontrado.
+        '404':
+          description: Evento no encontrado.
+
+components:
+  schemas:
+    CreateEventInput:
+      type: object
+      required:
+        - title
+        - description
+        - date
+        - capacity
+      properties:
+        title:
+          type: string
+          example: Recital de Rock 2026
+        description:
+          type: string
+          example: Evento masivo en vivo.
+        date:
+          type: string
+          example: 2026-10-15
+        capacity:
+          type: integer
+          example: 500

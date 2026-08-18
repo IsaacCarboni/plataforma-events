@@ -1,6 +1,6 @@
 # 🚀 Plataforma de Eventos e Inscripciones
 
-API REST profesional para la gestión integrada de eventos, usuarios e inscripciones en tiempo real con control dinámico de cupos y notificaciones por email, construida con **Node.js**, **Express** y **MongoDB Atlas**.
+API REST profesional para la gestión integrada de eventos, usuarios e inscripciones en tiempo real con control dinámico de cupos, documentación interactiva con Swagger, desplegable y aislada en contenedores mediante **Docker**.
 
 El proyecto implementa una **Arquitectura en Capas Independientes y Desacopladas** (Controllers, Services, Repositories, DAO, DTOs, Models, Middlewares) siguiendo los estándares de diseño Backend modernos, garantizando separación de responsabilidades, seguridad, alta escalabilidad y fácil mantenimiento.
 
@@ -8,14 +8,13 @@ El proyecto implementa una **Arquitectura en Capas Independientes y Desacopladas
 
 ## 🛠️ Tecnologías Utilizadas
 
-* **Node.js** - Entorno de ejecución para JavaScript en el servidor (ES Modules nativo).
-* **Express.js** - Framework web para el diseño y construcción de la API REST.
-* **MongoDB Atlas & Mongoose** - Base de datos NoSQL en la nube y modelado de datos mediante Schemas estrictos.
-* **Mongoose Paginate V2** - Plugin de paginación para consultas de catálogo optimizadas.
-* **Passport.js & JWT** - Estrategia centralizada para autenticación segura basada en tokens.
-* **Cookie-Parser** - Gestión de credenciales mediante cookies seguras `HTTP-Only` y `SameSite`.
+* **Node.js & Express.js** - Entorno de ejecución en el servidor (ES Modules) y framework de ruteo HTTP.
+* **MongoDB Atlas & Mongoose** - Base de datos NoSQL en la nube con modelado mediante Schemas estrictos.
+* **Docker & Docker Compose** - Containerización completa para entornos de desarrollo y producción aislados.
+* **Swagger / OpenAPI 3.0** - Documentación interactiva de la API integrada.
+* **Passport.js & JWT** - Estrategia centralizada de autenticación mediante cookies seguras `HTTP-Only`.
 * **Nodemailer** - Servicio transaccional para envío automático de correos de confirmación.
-* **Bcrypt** - Algoritmo de hashing criptográfico para resguardo de contraseñas.
+* **Bcrypt** - Hashing criptográfico para protección de contraseñas.
 * **Dotenv** - Gestión centralizada de variables de entorno.
 
 ---
@@ -24,14 +23,14 @@ El proyecto implementa una **Arquitectura en Capas Independientes y Desacopladas
 
 La estructura del código sigue el patrón de diseño por capas recomendado para sistemas empresariales:
 
-* `src/config/` - Configuración global de conexión a base de datos (`db.config.js`) y estrategias de Passport (`passport.config.js`).
-* `src/controllers/` - Manejo de peticiones HTTP, extracción de parámetros/queries y formateo de respuestas sanitizadas.
-* `src/services/` - Capa de negocio pura: validaciones de fechas, control de cupos, reglas operativas y servicio de correo (`MailService`).
+* `src/config/` - Configuración global de base de datos (`db.config.js`), Swagger (`swagger.js`) y Passport (`passport.config.js`).
+* `src/controllers/` - Manejo de peticiones HTTP, extracción de parámetros/queries y respuestas sanitizadas.
+* `src/services/` - Capa de negocio pura: validaciones de fechas, control de cupos y servicio de correo (`MailService`).
 * `src/repositories/` - Capa de abstracción intermedia para la orquestación de datos y aplicación de DTOs.
-* `src/dtos/` - Data Transfer Objects (`UserDTO`, `EventDTO`, `TicketDTO`) para filtrar y proteger datos sensibles expuestos a la API.
+* `src/dtos/` - Data Transfer Objects (`UserDTO`, `EventDTO`, `TicketDTO`) para filtrar y proteger datos sensibles.
 * `src/dao/` - Data Access Objects para la interacción directa con la base de datos MongoDB.
 * `src/models/` - Esquemas y modelos Mongoose (`user.model.js`, `event.model.js`, `ticket.model.js`).
-* `src/middlewares/` - Middlewares de autenticación, control de accesos por roles (RBAC) e interceptores.
+* `src/middlewares/` - Autenticación, control de accesos por roles (RBAC) e interceptores de errores.
 * `src/routes/` - Definición de endpoints y desacople de rutas (`session.routes.js`, `event.routes.js`, `ticket.routes.js`).
 * `src/utils/` - Helpers de hashing, firma de JWTs y utilidades generales.
 
@@ -98,67 +97,61 @@ El sistema discrimina las acciones según tres roles jerárquicos:
 | **GET** | `/api/events/:eid/tickets` | Creador / `admin` | Consulta de la lista de inscriptos a un evento propio. |
 | **PATCH** | `/api/tickets/:tid/cancel` | Dueño / `admin` | Cancelación de reserva (borrado lógico y liberación de cupo). |
 
-#### 🔍 Parámetros de Búsqueda y Paginación (`GET /api/events`)
-* `status`: Filtra por estado exacto (`draft`, `published`, `cancelled`, `finished`).
-* `category`: Filtra por categoría de evento.
-* `location`: Búsqueda parcial por ubicación (insensible a mayúsculas/minúsculas).
-* `dateFrom` / `dateTo`: Filtro por rango de fechas (`YYYY-MM-DD`).
-* `page`: Número de página a consultar (por defecto: `1`).
-* `limit`: Cantidad de registros por página (por defecto: `10`).
-* `sort`: Criterio de ordenamiento (ej: `date` o `-date`).
+---
+
+## 📄 Documentación Interactiva (Swagger)
+
+La API cuenta con documentación viva generada mediante **OpenAPI 3.0**. Una vez iniciada la aplicación, podés explorar y probar todos los endpoints desde el navegador en:
+
+👉 **`http://localhost:8080/api/docs`**
 
 ---
 
-## 🚫 Manejo de Errores Estándar
+## 🐳 Ejecución con Docker (Recomendado)
 
-La API responde utilizando códigos de estado HTTP estandarizados y mensajes explicativos:
+El proyecto incluye la configuración lista para levantar la API en un contenedor aislado con **Docker Compose**:
 
-* **`400 Bad Request`**: Fallas de validación (cupos insuficientes, eventos pasados o finalizados, inscripciones duplicadas, evento no publicado).
-* **`401 Unauthorized`**: Ausencia o invalidez del token JWT o de la cookie de sesión.
-* **`403 Forbidden`**: Permisos insuficientes (p. ej., intentar modificar o consultar recursos de otro organizador).
-* **`404 Not Found`**: Evento, usuario o ticket inexistente en la base de datos.
-* **`500 Internal Server Error`**: Errores no controlados en el servidor o problemas de conectividad con la base de datos.
+1. **Asegurar las variables de entorno:**
+   Creá el archivo `.env` en la raíz del proyecto.
 
----
-
-## ⚡ Guía de Prueba Rápida (Quick Start)
-
-1. **Registrar un usuario:** Enviar petición a `POST /api/sessions/register`.
-2. **Iniciar sesión:** Enviar credenciales a `POST /api/sessions/login` para recibir la cookie de sesión `HTTP-Only`.
-3. **Inscribirse a un evento:** Enviar `POST /api/events/:eid/tickets` especificando la cantidad deseada (`quantity`).
-4. **Verificar email:** Revisar la bandeja de entrada para verificar la recepción del correo de confirmación enviado vía Nodemailer.
-5. **Consultar mis entradas:** Ejecutar `GET /api/tickets/my-tickets` para comprobar la relación poblada (`populate`) formateada por el DTO.
-
----
-
-## 🔧 Instalación y Configuración
-
-1. **Clonar el repositorio localmente:**
+2. **Levantar la aplicación:**
    ```bash
-   git clone [https://github.com/IsaacCarboni/plataforma-events.git](https://github.com/IsaacCarboni/plataforma-events.git)
-   cd plataforma-events
-Instalar las dependencias del proyecto:
+   docker-compose up --build
+Detener la ejecución:
+
+Bash
+docker-compose down
+🔧 Instalación Local Alternativa
+Si preferís ejecutar la aplicación directamente en Node.js local:
+
+Clonar el repositorio:
+
+Bash
+git clone [https://github.com/IsaacCarboni/plataforma-events.git](https://github.com/IsaacCarboni/plataforma-events.git)
+cd plataforma-events
+Instalar dependencias:
 
 Bash
 npm install
-Crear el archivo .env en la raíz del proyecto basado en .env.example:
+Configurar variables de entorno (.env):
 
 Fragmento de código
 PORT=8080
 NODE_ENV=development
-MONGO_URL=tu_cadena_de_conexion_mongodb
+MONGO_URL=mongodb+srv://<usuario>:<password>@cluster0.xxx.mongodb.net/plataforma_events
 JWT_SECRET=tu_clave_secreta_jwt
 JWT_EXPIRES_IN=1h
 
-# Configuración de Email (Nodemailer)
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
 MAIL_USER=tu_email@gmail.com
 MAIL_PASS=tu_app_password
 MAIL_FROM="Plataforma Eventos <tu_email@gmail.com>"
-Iniciar el servidor en entorno de desarrollo:
+Iniciar en desarrollo:
 
 Bash
 npm run dev
 👤 Autor
-Isaac Carboni - Full Stack Developer en formación (Coderhouse).
+Isaac Carboni - Backend Developer
+
+GitHub Profile

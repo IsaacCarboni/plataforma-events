@@ -1,0 +1,72 @@
+paths:
+  /api/sessions/register:
+    post:
+      summary: Registro de nuevo usuario
+      tags:
+        - Sessions
+      description: Endpoint público para registrar un usuario. El rol se asigna por defecto como "user".
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterUserInput'
+      responses:
+        '201':
+          description: Usuario creado exitosamente.
+        '400':
+          description: Datos faltantes o correo electrónico ya registrado.
+
+  /api/sessions/login:
+    post:
+      summary: Inicio de sesión de usuario
+      tags:
+        - Sessions
+      description: Autentica al usuario y genera una cookie HTTP-Only con el token JWT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  example: isaac@test.com
+                password:
+                  type: string
+                  example: Password123!
+      responses:
+        '200':
+          description: Sesión iniciada correctamente.
+        '401':
+          description: Credenciales inválidas.
+
+components:
+  schemas:
+    RegisterUserInput:
+      type: object
+      required:
+        - first_name
+        - last_name
+        - email
+        - password
+      properties:
+        first_name:
+          type: string
+          example: Isaac
+        last_name:
+          type: string
+          example: Carboni
+        email:
+          type: string
+          example: isaac@test.com
+        password:
+          type: string
+          example: Password123!
+        age:
+          type: integer
+          example: 31

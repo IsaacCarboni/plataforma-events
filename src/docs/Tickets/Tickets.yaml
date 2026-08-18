@@ -1,0 +1,58 @@
+paths:
+  /api/tickets/my-tickets:
+    get:
+      summary: Obtener tickets del usuario autenticado
+      tags:
+        - Tickets
+      description: Retorna la lista de tickets del usuario logueado.
+      responses:
+        '200':
+          description: Tickets recuperados correctamente.
+        '401':
+          description: No autenticado.
+
+  /api/events/{eid}/tickets:
+    post:
+      summary: Reservar tickets para un evento
+      tags:
+        - Tickets
+      parameters:
+        - in: path
+          name: eid
+          required: true
+          schema:
+            type: string
+          description: ID del evento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity:
+                  type: integer
+                  example: 1
+      responses:
+        '201':
+          description: Ticket reservado exitosamente.
+        '404':
+          description: Evento no encontrado.
+
+  /api/tickets/{tid}/cancel:
+    patch:
+      summary: Cancelar un ticket
+      tags:
+        - Tickets
+      parameters:
+        - in: path
+          name: tid
+          required: true
+          schema:
+            type: string
+          description: ID del ticket a cancelar
+      responses:
+        '200':
+          description: Ticket cancelado con éxito.
+        '404':
+          description: Ticket no encontrado.
