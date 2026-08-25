@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   app:
     build: .
@@ -8,7 +10,18 @@ services:
       - .env
     environment:
       - NODE_ENV=development
+      # Conexión interna a Redis dentro del entorno Docker
+      - REDIS_URL=redis://redis:6379
     volumes:
       - .:/app
       - /app/node_modules
+    depends_on:
+      - redis
+    restart: always
+
+  redis:
+    image: redis:alpine
+    container_name: plataforma-events-redis
+    ports:
+      - "6379:6379"
     restart: always
