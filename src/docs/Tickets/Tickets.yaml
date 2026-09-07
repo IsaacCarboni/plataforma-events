@@ -4,10 +4,24 @@ paths:
       summary: Obtener tickets del usuario autenticado
       tags:
         - Tickets
-      description: Retorna la lista de tickets del usuario logueado.
+      description: Retorna la lista de tickets pertenecientes al usuario en sesión.
+      security:
+        - cookieAuth: []
       responses:
         '200':
           description: Tickets recuperados correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  payload:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TicketResponse'
         '401':
           description: No autenticado.
 
@@ -16,13 +30,16 @@ paths:
       summary: Reservar tickets para un evento
       tags:
         - Tickets
+      description: Emite una nueva reserva de entradas para el evento especificado.
+      security:
+        - cookieAuth: []
       parameters:
         - in: path
           name: eid
           required: true
           schema:
             type: string
-          description: ID del evento
+          description: ID del evento a reservar.
       requestBody:
         required: true
         content:
@@ -32,10 +49,15 @@ paths:
               properties:
                 quantity:
                   type: integer
-                  example: 1
+                  default: 1
+                  example: 2
       responses:
         '201':
           description: Ticket reservado exitosamente.
+        '400':
+          description: Solicitud inválida o sin cupo suficiente.
+        '401':
+          description: No autenticado.
         '404':
           description: Evento no encontrado.
 
@@ -44,15 +66,51 @@ paths:
       summary: Cancelar un ticket
       tags:
         - Tickets
+      description: Cancela la reserva y restituye el cupo disponible al evento.
+      security:
+        - cookieAuth: []
       parameters:
         - in: path
           name: tid
           required: true
           schema:
             type: string
-          description: ID del ticket a cancelar
+          description: ID del ticket a cancelar.
       responses:
         '200':
           description: Ticket cancelado con éxito.
+        '401':
+          description: No autenticado o permiso insuficiente.
         '404':
           description: Ticket no encontrado.
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: currentUser
+
+  schemas:
+    TicketResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 65f1b9a8c4d5e6f7a8b9c0d2
+        event:
+          type: string
+          example: 65f1a2b3c4d5e6f7a8b9c0d1
+        user:
+          type: string
+          example: 65f18765c4d5e6f7a8b9c0d0
+        quantity:
+          type: integer
+          example: 2
+        status:
+          type: string
+          example: active
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-09-01T11:00:00.000Z"

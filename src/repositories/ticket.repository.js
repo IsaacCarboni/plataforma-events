@@ -11,17 +11,18 @@ export class TicketRepository {
   }
 
   async getTicketById(id) {
-    return await this.dao.findById(id);
+    const ticket = await this.dao.findById(id);
+    return ticket ? new TicketDTO(ticket) : null;
   }
 
   async hasActiveTicket(userId, eventId) {
     const ticket = await this.dao.findActiveByUserAndEvent(userId, eventId);
-    return !!ticket;
+    return Boolean(ticket);
   }
 
   async getOccupiedCapacity(eventId) {
     const activeTickets = await this.dao.findActiveByEvent(eventId);
-    return activeTickets.reduce((acc, t) => acc + t.quantity, 0);
+    return activeTickets.reduce((acc, t) => acc + (t.quantity || 0), 0);
   }
 
   async getTicketsByUser(userId) {

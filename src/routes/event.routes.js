@@ -5,10 +5,10 @@ import { cacheEvents } from '../middlewares/cache.middleware.js';
 
 const router = Router();
 
-// GET /api/events (Público - Caché de 120 segundos)
+// GET /api/events (Público - Caché 120s)
 router.get('/', cacheEvents(120), EventController.getEvents);
 
-// GET /api/events/:id (Público - Caché de 60 segundos)
+// GET /api/events/:id (Público - Caché 60s)
 router.get('/:id', cacheEvents(60), EventController.getEventById);
 
 // POST /api/events (Solo 'organizer' y 'admin')
@@ -19,7 +19,7 @@ router.post(
   EventController.createEvent
 );
 
-// PUT /api/events/:id (Solo dueño del evento o 'admin')
+// PUT /api/events/:id (Solo 'organizer' y 'admin')
 router.put(
   '/:id',
   authMiddleware,
@@ -27,7 +27,7 @@ router.put(
   EventController.updateEvent
 );
 
-// PATCH /api/events/:id/status (Solo dueño del evento o 'admin')
+// PATCH /api/events/:id/status (Solo 'organizer' y 'admin')
 router.patch(
   '/:id/status',
   authMiddleware,

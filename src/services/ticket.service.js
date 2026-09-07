@@ -3,9 +3,10 @@ import { EventDAO } from '../dao/event.dao.js';
 import { TicketRepository } from '../repositories/ticket.repository.js';
 import { EventRepository } from '../repositories/event.repository.js';
 import { MailService } from './mail.service.js';
+import CustomError from './errors/CustomError.js';
+import EErrors from './errors/enums.js';
 import crypto from 'crypto';
 
-// Instanciamos los repositorios mediante sus DAOs correspondientes
 const ticketRepository = new TicketRepository(new TicketDAO());
 const eventRepository = new EventRepository(new EventDAO());
 
@@ -16,129 +17,152 @@ export class TicketService {
   static async createTicket(eventId, user, quantity) {
     const numQuantity = Number(quantity);
 
-    // 1. Validar cantidad válida
     if (!numQuantity || numQuantity <= 0) {
-      throw { statusCode: 400, message: 'Debes solicitar al menos 1 entrada válida.' };
+      CustomError.createError({
+        name: 'InvalidQuantityError',
+        message: 'Debes solicitar al menos 1 entrada válida.',
+        code: EErrors.INVALID_TYPES_ERROR,
+      });
     }
 
-    // 2. Validar existencia del evento (vía Repository)
     const event = await eventRepository.getEventById(eventId);
     if (!event) {
-      throw { statusCode: 404, message: 'El evento solicitado no existe.' };
+      CustomError.createError({
+        name: 'NotFoundError',
+        message: 'El evento solicitado no existe.',
+        code: EErrors.RESOURCE_NOT_FOUND,
+      });
     }
 
-    // 3. Validar estado del evento
     if (event.status !== 'published') {
-      throw {
-        statusCode: 400,
+      CustomError.createError({
+        name: 'InvalidStateError',
         message: `No es posible inscribirse. El evento se encuentra en estado '${event.status}'.`,
-      };
+        code: EErrors.INVALID_TYPES_ERROR,
+      });
     }
 
-    // 3.1. 🛑 Validar si el evento ya finalizó por fecha
     if (new Date(event.date) < new Date()) {
-      throw {
-        statusCode: 400,
+      CustomError.createError({
+        name: 'EventExpiredError',
         message: 'No es posible inscribirse. El evento ya ha finalizado.',
-      };
+        code: EErrors.INVALID_TYPES_ERROR,
+      });
     }
 
-    // 4. Validar si el usuario ya tiene un ticket activo (vía Repository)
-    const hasDuplicate = await ticketRepository.hasActiveTicket(user._id, eventId);
+    const userId = user._id?.toString() || user.id?.toString();
+
+    const hasDuplicate = await ticketRepository.hasActiveTicket(userId, eventId);
     if (hasDuplicate) {
-      throw {
-        statusCode: 400,
+      CustomError.createError({
+        name: 'DuplicateTicketError',
         message: 'Ya cuentas con una inscripción activa para este evento.',
-      };
+        code: EErrors.INVALID_TYPES_ERROR,
+      });
     }
 
-    // 5. Calcular cupos disponibles (vía Repository)
     const occupiedCapacity = await ticketRepository.getOccupiedCapacity(eventId);
     const availableCapacity = event.capacity - occupiedCapacity;
 
     if (numQuantity > availableCapacity) {
-      throw {
-        statusCode: 400,
+      CustomError.createError({
+        name: 'CapacityExceededError',
         message: `Cupos insuficientes. Solicitaste ${numQuantity} entrada(s), pero solo quedan ${availableCapacity} disponible(s).`,
-      };
+        code: EErrors.INVALID_TYPES_ERROR,
+      });
     }
 
-    // 6. Generar código de reserva único
     const reservationCode = crypto.randomBytes(4).toString('hex').toUpperCase();
 
-    // 7. Crear el Ticket (vía Repository - devuelve TicketDTO)
     const newTicket = await ticketRepository.createTicket({
-      user: user._id,
+      user: userId,
       event: eventId,
       quantity: numQuantity,
       reservationCode,
       status: 'confirmed',
     });
 
-    // 8. Enviar correo de confirmación en segundo plano
     if (user.email) {
       MailService.sendTicketConfirmation(user.email, {
         eventTitle: event.title,
         reservationCode,
         quantity: numQuantity,
-      }).catch((err) => console.error('Error enviando notificación por email:', err));
+      }).catch((err) => console.error('[TicketService] Error enviando correo:', err.message));
     }
 
     return newTicket;
   }
 
   /**
-   * Obtiene los tickets del usuario autenticado (vía Repository - devuelven DTOs)
+   * Obtiene los tickets del usuario autenticado
    */
   static async getMyTickets(userId) {
     return await ticketRepository.getTicketsByUser(userId);
   }
 
   /**
-   * Obtiene todos los tickets de un evento (solo organizer del evento o admin)
+   * Obtiene todos los tickets de un evento (solo organizer o admin)
    */
   static async getEventTickets(eventId, user) {
     const event = await eventRepository.getEventById(eventId);
     if (!event) {
-      throw { statusCode: 404, message: 'El evento no existe.' };
+      CustomError.createError({
+        name: 'NotFoundError',
+        message: 'El evento no existe.',
+        code: EErrors.RESOURCE_NOT_FOUND,
+      });
     }
 
-    // Validar permisos: creador del evento o rol admin
-    const isOrganizer = event.organizer.toString() === user._id.toString();
+    const organizerId = event.organizer?.id || event.organizer?._id || event.organizer;
+    const currentUserId = user._id?.toString() || user.id?.toString();
+
+    const isOrganizer = organizerId?.toString() === currentUserId;
     const isAdmin = user.role === 'admin';
 
     if (!isOrganizer && !isAdmin) {
-      throw {
-        statusCode: 403,
+      CustomError.createError({
+        name: 'ForbiddenError',
         message: 'No tienes autorización para consultar las inscripciones de este evento.',
-      };
+        code: EErrors.AUTHORIZATION_ERROR,
+      });
     }
 
     return await ticketRepository.getTicketsByEvent(eventId);
   }
 
   /**
-   * Cancela un ticket (borrado lógico) y libera cupo automáticamente
+   * Cancela un ticket y libera el cupo
    */
   static async cancelTicket(ticketId, user) {
     const ticketDoc = await ticketRepository.getTicketById(ticketId);
     if (!ticketDoc) {
-      throw { statusCode: 404, message: 'El ticket solicitado no existe.' };
+      CustomError.createError({
+        name: 'NotFoundError',
+        message: 'El ticket solicitado no existe.',
+        code: EErrors.RESOURCE_NOT_FOUND,
+      });
     }
 
-    // Validar permisos: dueño del ticket o rol admin
-    const isOwner = ticketDoc.user.toString() === user._id.toString();
+    const ticketUserId = ticketDoc.user?.id || ticketDoc.user?._id || ticketDoc.user;
+    const currentUserId = user._id?.toString() || user.id?.toString();
+
+    const isOwner = ticketUserId?.toString() === currentUserId;
     const isAdmin = user.role === 'admin';
 
     if (!isOwner && !isAdmin) {
-      throw {
-        statusCode: 403,
+      CustomError.createError({
+        name: 'ForbiddenError',
         message: 'No tienes autorización para cancelar este ticket.',
-      };
+        code: EErrors.AUTHORIZATION_ERROR,
+      });
     }
 
     if (ticketDoc.status === 'cancelled') {
-      throw { statusCode: 400, message: 'Este ticket ya se encuentra cancelado.' };
+      CustomError.createError({
+        name: 'AlreadyCancelledError',
+        message: 'Este ticket ya se encuentra cancelado.',
+        code: EErrors.INVALID_TYPES_ERROR,
+      });
     }
 
     ticketDoc.status = 'cancelled';

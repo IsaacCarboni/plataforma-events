@@ -8,25 +8,21 @@ const LocalStrategy = local.Strategy;
 const JWTStrategy = jwt.Strategy;
 const ExtractJWT = jwt.ExtractJwt;
 
-// Función aux para extraer el JWT directamente desde la cookie HTTP-Only
+// Extractor para leer el JWT desde la cookie HTTP-Only
 const cookieExtractor = (req) => {
-    let token = null;
-    if (req && req.cookies) {
-        token = req.cookies['currentUser'];
-    }
-    return token;
+    return req && req.cookies ? req.cookies['currentUser'] : null;
 };
 
 const initializePassport = () => {
 
-    // 1. Estrategia de Registro Local (Pública - Protegida contra escalado de roles)
+    // 1. Registro Local (Público con protección de roles)
     passport.use('register', new LocalStrategy(
         {
             passReqToCallback: true, 
             usernameField: 'email'   
         },
         async (req, username, password, done) => {
-            const { first_name, last_name, age } = req.body; // 🔒 Ignoramos 'role' del body
+            const { first_name, last_name, age } = req.body;
 
             try {
                 const userExists = await userService.getUserByEmail(username);
@@ -43,7 +39,7 @@ const initializePassport = () => {
                     email: username,
                     age,
                     password: hashedPassword,
-                    role: 'user' // 👈 Forzado a 'user'. Nadie se puede registrar como admin/organizer desde la ruta pública.
+                    role: 'user' // Seguridad: asignación estricta de rol
                 };
 
                 const result = await userService.createUser(newUser);
@@ -55,7 +51,7 @@ const initializePassport = () => {
         }
     ));
 
-    // 2. Estrategia de Login Local
+    // 2. Login Local
     passport.use('login', new LocalStrategy(
         { usernameField: 'email' },
         async (username, password, done) => {
@@ -79,10 +75,15 @@ const initializePassport = () => {
     ));
 
     // 3. Estrategia JWT ('current')
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+        throw new Error("⚠️  JWT_SECRET no está definida en las variables de entorno.");
+    }
+
     passport.use('current', new JWTStrategy(
         {
             jwtFromRequest: ExtractJWT.fromExtractors([cookieExtractor]),
-            secretOrKey: process.env.JWT_SECRET || 'secretCoder'
+            secretOrKey: jwtSecret
         },
         async (jwt_payload, done) => {
             try {
@@ -92,19 +93,6 @@ const initializePassport = () => {
             }
         }
     ));
-
-    passport.serializeUser((user, done) => {
-        done(null, user._id);
-    });
-
-    passport.deserializeUser(async (id, done) => {
-        try {
-            const user = await userService.getUserById(id);
-            done(null, user);
-        } catch (error) {
-            done(error);
-        }
-    });
 };
 
 export default initializePassport;

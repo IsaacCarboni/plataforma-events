@@ -1,18 +1,35 @@
 paths:
   /api/events:
     get:
-      summary: Obtener listado de eventos
+      summary: Obtener listado de eventos paginados
       tags:
         - Events
-      description: Devuelve la lista completa de eventos disponibles.
+      description: Devuelve la lista completa de eventos disponibles en el sistema con soporte de paginación.
       responses:
         '200':
           description: Lista de eventos obtenida con éxito.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  payload:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EventResponse'
+        '500':
+          description: Error interno del servidor.
+
     post:
       summary: Crear un nuevo evento
       tags:
         - Events
-      description: Crea un nuevo evento en la plataforma.
+      description: Crea un nuevo evento en la plataforma. Requiere rol de organizer o admin.
+      security:
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -23,7 +40,9 @@ paths:
         '201':
           description: Evento creado exitosamente.
         '401':
-          description: No autorizado.
+          description: No autorizado (Token ausente o inválido).
+        '403':
+          description: Prohibido (Rol insuficiente).
 
   /api/events/{eid}:
     get:
@@ -36,7 +55,7 @@ paths:
           required: true
           schema:
             type: string
-          description: ID del evento
+          description: ID de Mongo (_id) del evento a buscar.
       responses:
         '200':
           description: Evento encontrado.
@@ -44,6 +63,12 @@ paths:
           description: Evento no encontrado.
 
 components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: currentUser
+
   schemas:
     CreateEventInput:
       type: object
@@ -61,7 +86,30 @@ components:
           example: Evento masivo en vivo.
         date:
           type: string
-          example: 2026-10-15
+          format: date-time
+          example: "2026-10-15T20:00:00.000Z"
         capacity:
           type: integer
           example: 500
+
+    EventResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 65f1a2b3c4d5e6f7a8b9c0d1
+        title:
+          type: string
+          example: Recital de Rock 2026
+        description:
+          type: string
+          example: Evento masivo en vivo.
+        date:
+          type: string
+          example: "2026-10-15T20:00:00.000Z"
+        capacity:
+          type: integer
+          example: 500
+        status:
+          type: string
+          example: published

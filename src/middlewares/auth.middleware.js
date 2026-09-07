@@ -1,9 +1,7 @@
 import passport from 'passport';
 
 /**
- * Middleware de Autenticación Centralizado
- * Extrae y valida el token JWT desde la cookie 'currentUser'.
- * Responde con código 401 si la sesión no es válida, expiró o no existe.
+ * Middleware de Autenticación Centralizado (JWT Stateless)
  */
 export const authMiddleware = (req, res, next) => {
     passport.authenticate('current', { session: false }, (err, user, info) => {
@@ -17,30 +15,32 @@ export const authMiddleware = (req, res, next) => {
         }
         
         req.user = user;
-        next();
+        return next();
     })(req, res, next);
 };
 
 /**
- * Middleware de Autorización basado en Roles (RBAC)
- * Evalúa los privilegios del usuario autenticado contra los roles permitidos.
- * Responde con código 403 si el rol no cuenta con los permisos requeridos.
+ * Middleware de Autorización por Roles (RBAC)
  */
-export const handleRoles = (allowedRoles = []) => {
+export const handleRoles = (roles = []) => {
+    // Normaliza el parámetro a Array por si se pasa un string único (ej: handleRoles('admin'))
+    const allowedRoles = Array.isArray(roles) ? roles : [roles];
+
     return (req, res, next) => {
         if (!req.user) {
             return res.status(401).json({ status: 'error', message: 'No autenticado.' });
         }
 
-        const userRole = req.user.role || 'default user';
+        const userRole = req.user.role || 'user';
 
-        if (!allowedRoles.includes(userRole)) {
-            return res.status(403).json({ 
-                status: 'error', 
-                message: `Acceso denegado: El rol '${userRole}' no tiene los privilegios necesarios para realizar esta acción.` 
-            });
+        // Bypass de Admin (opcional pero recomendado) o verificación en la lista permitida
+        if (userRole === 'admin' || allowedRoles.includes(userRole)) {
+            return next();
         }
 
-        next();
+        return res.status(403).json({ 
+            status: 'error', 
+            message: `Acceso denegado: El rol '${userRole}' no cuenta con los permisos requeridos.` 
+        });
     };
 };

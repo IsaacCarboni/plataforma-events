@@ -1,17 +1,21 @@
 import { TicketService } from '../services/ticket.service.js';
+import { clearEventsCache } from '../utils/cache.util.js';
 
 export class TicketController {
-  /**
-   * POST /api/events/:eid/tickets
-   * Crear inscripción / ticket
-   */
+
+  // 1️⃣ Crear ticket / reserva
   static async createTicket(req, res) {
     try {
       const { eid } = req.params;
       const { quantity = 1 } = req.body;
-      const user = req.user; // Usuario inyectado por el middleware de Passport/JWT
+      const user = req.user;
 
       const newTicket = await TicketService.createTicket(eid, user, quantity);
+
+      // Limpieza preventiva de caché para refrescar el stock actualizado en lecturas
+      clearEventsCache().catch(err => 
+        console.error('⚠️ Error no bloqueante al limpiar el caché:', err.message)
+      );
 
       return res.status(201).json({
         status: 'success',
@@ -26,13 +30,19 @@ export class TicketController {
     }
   }
 
-  /**
-   * GET /api/tickets/my-tickets
-   * Obtener inscripciones del usuario autenticado
-   */
+  // 2️⃣ Obtener tickets del usuario autenticado
   static async getMyTickets(req, res) {
     try {
-      const userId = req.user._id;
+      // Extracción segura del ID sin importar la firma del JWT
+      const userId = req.user?._id || req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ 
+          status: 'error', 
+          message: 'Identificador de usuario no válido.' 
+        });
+      }
+
       const tickets = await TicketService.getMyTickets(userId);
 
       return res.status(200).json({
@@ -47,10 +57,7 @@ export class TicketController {
     }
   }
 
-  /**
-   * GET /api/events/:eid/tickets
-   * Obtener participantes de un evento (organizer del evento o admin)
-   */
+  // 3️⃣ Obtener participantes de un evento (Organizador/Admin)
   static async getEventTickets(req, res) {
     try {
       const { eid } = req.params;
@@ -70,16 +77,18 @@ export class TicketController {
     }
   }
 
-  /**
-   * PATCH /api/tickets/:tid/cancel
-   * Cancelar un ticket y liberar el cupo (dueño del ticket o admin)
-   */
+  // 4️⃣ Cancelar ticket y liberar cupo
   static async cancelTicket(req, res) {
     try {
       const { tid } = req.params;
       const user = req.user;
 
       const cancelledTicket = await TicketService.cancelTicket(tid, user);
+
+      // Al liberar cupo, se desactiva el caché previo para mostrar la disponibilidad real
+      clearEventsCache().catch(err => 
+        console.error('⚠️ Error no bloqueante al limpiar el caché:', err.message)
+      );
 
       return res.status(200).json({
         status: 'success',

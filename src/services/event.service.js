@@ -1,17 +1,28 @@
 import { EventDAO } from '../dao/event.dao.js';
 import { EventRepository } from '../repositories/event.repository.js';
+import CustomError from './errors/CustomError.js';
+import EErrors from './errors/enums.js';
 
 const eventRepository = new EventRepository(new EventDAO());
 
 export class EventService {
   static async createEvent(eventData, userId) {
     const eventDate = new Date(eventData.date);
+    
     if (isNaN(eventDate.getTime())) {
-      throw { statusCode: 400, message: 'La fecha proporcionada no es válida.' };
+      CustomError.createError({
+        name: 'InvalidDateError',
+        message: 'La fecha proporcionada no es válida.',
+        code: EErrors.INVALID_TYPES_ERROR,
+      });
     }
 
     if (eventDate <= new Date()) {
-      throw { statusCode: 400, message: 'No podés crear un evento con una fecha pasada.' };
+      CustomError.createError({
+        name: 'InvalidDateError',
+        message: 'No podés crear un evento con una fecha pasada.',
+        code: EErrors.INVALID_TYPES_ERROR,
+      });
     }
 
     const newEventData = {
@@ -61,7 +72,11 @@ export class EventService {
   static async getEventById(id) {
     const event = await eventRepository.getEventById(id);
     if (!event) {
-      throw { statusCode: 404, message: 'Evento no encontrado.' };
+      CustomError.createError({
+        name: 'NotFoundError',
+        message: 'Evento no encontrado.',
+        code: EErrors.RESOURCE_NOT_FOUND,
+      });
     }
     return event;
   }
@@ -69,25 +84,42 @@ export class EventService {
   static async updateEvent(id, updateData, user) {
     const event = await eventRepository.getEventById(id);
     if (!event) {
-      throw { statusCode: 404, message: 'Evento no encontrado.' };
+      CustomError.createError({
+        name: 'NotFoundError',
+        message: 'Evento no encontrado.',
+        code: EErrors.RESOURCE_NOT_FOUND,
+      });
     }
 
     if (event.status === 'cancelled' || event.status === 'finished') {
-      throw { statusCode: 400, message: `No se puede modificar un evento con estado '${event.status}'.` };
+      CustomError.createError({
+        name: 'InvalidStateError',
+        message: `No se puede modificar un evento con estado '${event.status}'.`,
+        code: EErrors.INVALID_TYPES_ERROR,
+      });
     }
 
     const organizerId = event.organizer?.id || event.organizer?._id || event.organizer;
-    const isOwner = organizerId.toString() === user._id.toString() || organizerId.toString() === user.id;
+    const currentUserId = user._id?.toString() || user.id?.toString();
+    const isOwner = organizerId?.toString() === currentUserId;
     const isAdmin = user.role === 'admin';
 
     if (!isOwner && !isAdmin) {
-      throw { statusCode: 403, message: 'Acceso denegado: No tenés permisos para modificar este evento.' };
+      CustomError.createError({
+        name: 'ForbiddenError',
+        message: 'Acceso denegado: No tenés permisos para modificar este evento.',
+        code: EErrors.AUTHORIZATION_ERROR,
+      });
     }
 
     if (updateData.date) {
       const newDate = new Date(updateData.date);
       if (newDate <= new Date()) {
-        throw { statusCode: 400, message: 'No podés reprogramar el evento para una fecha pasada.' };
+        CustomError.createError({
+          name: 'InvalidDateError',
+          message: 'No podés reprogramar el evento para una fecha pasada.',
+          code: EErrors.INVALID_TYPES_ERROR,
+        });
       }
     }
 
@@ -98,20 +130,33 @@ export class EventService {
   static async changeStatus(id, newStatus, user) {
     const validStatuses = ['draft', 'published', 'cancelled', 'finished'];
     if (!validStatuses.includes(newStatus)) {
-      throw { statusCode: 400, message: `Estado inválido. Los estados permitidos son: ${validStatuses.join(', ')}` };
+      CustomError.createError({
+        name: 'InvalidStatusError',
+        message: `Estado inválido. Los estados permitidos son: ${validStatuses.join(', ')}`,
+        code: EErrors.INVALID_TYPES_ERROR,
+      });
     }
 
     const event = await eventRepository.getEventById(id);
     if (!event) {
-      throw { statusCode: 404, message: 'Evento no encontrado.' };
+      CustomError.createError({
+        name: 'NotFoundError',
+        message: 'Evento no encontrado.',
+        code: EErrors.RESOURCE_NOT_FOUND,
+      });
     }
 
     const organizerId = event.organizer?.id || event.organizer?._id || event.organizer;
-    const isOwner = organizerId.toString() === user._id.toString() || organizerId.toString() === user.id;
+    const currentUserId = user._id?.toString() || user.id?.toString();
+    const isOwner = organizerId?.toString() === currentUserId;
     const isAdmin = user.role === 'admin';
 
     if (!isOwner && !isAdmin) {
-      throw { statusCode: 403, message: 'Acceso denegado: No tenés permisos para cambiar el estado de este evento.' };
+      CustomError.createError({
+        name: 'ForbiddenError',
+        message: 'Acceso denegado: No tenés permisos para cambiar el estado de este evento.',
+        code: EErrors.AUTHORIZATION_ERROR,
+      });
     }
 
     return await eventRepository.updateEvent(id, { status: newStatus });

@@ -1,22 +1,22 @@
 import { UserDTO } from './user.dto.js';
 
 export class EventDTO {
-  constructor(event) {
-    this.id = event._id || event.id;
-    this.title = event.title;
-    this.description = event.description;
-    this.date = event.date;
-    this.location = event.location;
-    this.capacity = event.capacity;
-    this.price = event.price;
-    this.status = event.status;
-    this.category = event.category;
+  constructor(event = {}) {
+    this.id = event._id?.toString() || event.id || null;
+    this.title = event.title ?? '';
+    this.description = event.description ?? '';
+    this.date = event.date ? new Date(event.date).toISOString() : null;
+    this.location = event.location ?? '';
+    this.capacity = event.capacity ?? 0;
+    this.price = event.price ?? 0;
+    this.status = event.status ?? 'draft';
+    this.category = event.category ?? 'general';
 
-    // Si organizer está populado como objeto, lo pasa por UserDTO
-    if (event.organizer && typeof event.organizer === 'object' && event.organizer.email) {
+    // Verificación segura de objeto populado (evita la trampa de typeof null === 'object')
+    if (event.organizer && typeof event.organizer === 'object' && 'email' in event.organizer) {
       this.organizer = new UserDTO(event.organizer);
     } else {
-      this.organizer = event.organizer;
+      this.organizer = event.organizer?.toString() || null;
     }
   }
 }

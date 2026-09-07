@@ -7,8 +7,7 @@ export class EventRepository {
 
   async getEventById(id) {
     const event = await this.dao.findById(id);
-    if (!event) return null;
-    return new EventDTO(event);
+    return event ? new EventDTO(event) : null;
   }
 
   async createEvent(eventData) {
@@ -18,11 +17,14 @@ export class EventRepository {
 
   async updateEvent(id, updateData) {
     const updated = await this.dao.update(id, updateData);
-    if (!updated) return null;
-    return new EventDTO(updated);
+    return updated ? new EventDTO(updated) : null;
   }
 
   async getPaginatedEvents(query, options) {
-    return await this.dao.paginate(query, options);
+    const result = await this.dao.paginate(query, options);
+    return {
+      ...result,
+      docs: result.docs.map((doc) => new EventDTO(doc))
+    };
   }
 }

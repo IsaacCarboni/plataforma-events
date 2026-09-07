@@ -19,6 +19,9 @@ const connectDB = async () => {
     } catch (error) {
         console.error("Error crítico en el módulo de base de datos:", error.message);
         console.warn("Verifique la conectividad de red y la lista blanca de direcciones IP en el panel de Atlas.");
+        
+        // Detiene el proceso inmediatamente si no hay base de datos
+        process.exit(1);
     }
 };
 

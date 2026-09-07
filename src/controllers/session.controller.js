@@ -1,13 +1,21 @@
-import { generateToken } from '../utils/jwt.js'; 
+import { generateToken } from '../utils/jwt.js';
 
-// 1️⃣ LOGIN: Passport ya validó el usuario y lo deja listo en req.user
+// Opciones reutilizables y consistentes para la cookie
+const COOKIE_OPTIONS = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 3600000 // 1 hora
+};
+
+// 1️⃣ LOGIN: Emite JWT y lo guarda en cookie HTTP-Only
 export const login = async (req, res) => {
     try {
         if (!req.user) {
             return res.status(401).json({ status: 'error', message: 'Credenciales inválidas' });
         }
 
-        // Armamos el payload para el JWT respetando el rol del usuario de la BD
+        // Payload del JWT usando el rol asignado en DB
         const userPayload = {
             id: req.user._id,
             email: req.user.email,
@@ -18,16 +26,19 @@ export const login = async (req, res) => {
 
         const token = generateToken(userPayload);
 
-        res.cookie('currentUser', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 3600000 // 1 hora
-        });
+        // Inyección de la cookie de forma segura
+        res.cookie('currentUser', token, COOKIE_OPTIONS);
 
-        res.status(200).json({ status: 'success', message: '🎉 Login exitoso con Passport' });
+        return res.status(200).json({ 
+            status: 'success', 
+            message: '🎉 Login exitoso con Passport',
+            user: userPayload
+        });
     } catch (error) {
-        res.status(500).json({ status: 'error', message: 'Error interno en el servidor: ' + error.message });
+        return res.status(500).json({ 
+            status: 'error', 
+            message: 'Error interno en el servidor: ' + error.message 
+        });
     }
 };
 
@@ -37,18 +48,25 @@ export const getSessionProfile = async (req, res) => {
         return res.status(401).json({ status: 'error', message: 'No hay una sesión activa o el token expiró' });
     }
     
-    res.status(200).json({ 
+    return res.status(200).json({ 
         status: 'success', 
         payload: {
             id: req.user.id || req.user._id,
             email: req.user.email,
+            first_name: req.user.first_name,
+            last_name: req.user.last_name,
             role: req.user.role || 'user'
         }
     });
 };
 
-// 3️⃣ LOGOUT: Limpia la cookie del navegador
+// 3️⃣ LOGOUT: Elimina la cookie asegurando los mismos parámetros
 export const logout = async (req, res) => {
-    res.clearCookie('currentUser');
-    res.status(200).json({ status: 'success', message: 'Sesión cerrada correctamente' });
+    res.clearCookie('currentUser', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax'
+    });
+
+    return res.status(200).json({ status: 'success', message: 'Sesión cerrada correctamente' });
 };

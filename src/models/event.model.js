@@ -17,7 +17,7 @@ const eventSchema = new Schema(
       type: String,
       required: [true, 'La categoría es obligatoria.'],
       trim: true,
-      index: true, // Índice para acelerar filtros por categoría
+      index: true,
     },
     date: {
       type: Date,
@@ -50,8 +50,9 @@ const eventSchema = new Schema(
     },
     organizer: {
       type: Schema.Types.ObjectId,
-      ref: 'users', // Referencia exacta al modelo User
+      ref: 'users',
       required: [true, 'El organizador es obligatorio.'],
+      index: true,
     },
   },
   {
@@ -59,7 +60,9 @@ const eventSchema = new Schema(
   }
 );
 
-// Plugin para paginación automática (GET /api/events con page, limit, sort)
+// Índice compuesto para acelerar consultas de cartelera (Eventos publicados ordenados por fecha)
+eventSchema.index({ status: 1, date: 1 });
+
 eventSchema.plugin(mongoosePaginate);
 
 export const EventModel = model('events', eventSchema);

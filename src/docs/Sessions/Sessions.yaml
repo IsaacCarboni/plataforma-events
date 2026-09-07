@@ -28,24 +28,51 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - email
-                - password
-              properties:
-                email:
-                  type: string
-                  example: isaac@test.com
-                password:
-                  type: string
-                  example: Password123!
+              $ref: '#/components/schemas/LoginUserInput'
       responses:
         '200':
-          description: Sesión iniciada correctamente.
+          description: Sesión iniciada correctamente. La cookie 'currentUser' es inyectada en la respuesta.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: currentUser=eyJhbGciOi...; Path=/; HttpOnly; Secure
         '401':
           description: Credenciales inválidas.
 
+  /api/sessions/current:
+    get:
+      summary: Obtener perfil del usuario autenticado
+      tags:
+        - Sessions
+      description: Devuelve la información del usuario en sesión activa a partir de la cookie JWT.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Datos del usuario autenticado.
+        '401':
+          description: No hay una sesión activa o el token expiró.
+
+  /api/sessions/logout:
+    post:
+      summary: Cerrar sesión
+      tags:
+        - Sessions
+      description: Limpia la cookie 'currentUser' del navegador.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Sesión cerrada correctamente.
+
 components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: currentUser
+
   schemas:
     RegisterUserInput:
       type: object
@@ -63,10 +90,27 @@ components:
           example: Carboni
         email:
           type: string
+          format: email
           example: isaac@test.com
         password:
           type: string
+          format: password
           example: Password123!
         age:
           type: integer
           example: 31
+
+    LoginUserInput:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: isaac@test.com
+        password:
+          type: string
+          format: password
+          example: Password123!

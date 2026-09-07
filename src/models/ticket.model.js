@@ -4,13 +4,15 @@ const ticketSchema = new Schema(
   {
     user: {
       type: Schema.Types.ObjectId,
-      ref: 'users', // 👈 Corregido: Coincide exactamente con el modelo model('users', userSchema)
+      ref: 'users',
       required: [true, 'El ID de usuario es obligatorio.'],
+      index: true,
     },
     event: {
       type: Schema.Types.ObjectId,
-      ref: 'events', // 👈 Corregido: Coincide exactamente con el modelo model('events', eventSchema)
+      ref: 'events',
       required: [true, 'El ID de evento es obligatorio.'],
+      index: true,
     },
     status: {
       type: String,
@@ -19,6 +21,7 @@ const ticketSchema = new Schema(
         message: 'El estado del ticket debe ser confirmed, pending o cancelled.',
       },
       default: 'confirmed',
+      index: true,
     },
     quantity: {
       type: Number,
@@ -29,6 +32,7 @@ const ticketSchema = new Schema(
       type: String,
       required: true,
       unique: true,
+      index: true,
     },
     cancelledAt: {
       type: Date,
@@ -36,8 +40,11 @@ const ticketSchema = new Schema(
     },
   },
   {
-    timestamps: true, // Agrega createdAt y updatedAt automáticamente
+    timestamps: true,
   }
 );
 
-export const TicketModel = model('tickets', ticketSchema); // 👈 Corregido: Nombre en minúscula y plural ('tickets')
+// Índice compuesto para acelerar la búsqueda de entradas de un usuario en un evento específico
+ticketSchema.index({ user: 1, event: 1 });
+
+export const TicketModel = model('tickets', ticketSchema);

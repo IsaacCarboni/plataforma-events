@@ -1,64 +1,96 @@
 import { userDAO } from '../dao/user.dao.js';
 import { createHash, isValidPassword } from '../utils/hash.js';
 import { generateToken } from '../utils/jwt.js';
+import CustomError from './errors/CustomError.js';
+import EErrors from './errors/enums.js';
+import { generateUserErrorParam } from './errors/info.js';
 
 class SessionService {
-    async registerUser(userData) {
-        const { first_name, last_name, email, password } = userData;
+  /**
+   * Registra un nuevo usuario con validaciones y contraseña encriptada
+   */
+  async registerUser(userData) {
+    const { first_name, last_name, email, password } = userData;
 
-        // 1. Validaciones de presencia, formato mínimo y normalización
-        if (!first_name || !last_name || !email || !password) {
-            throw new Error('Faltan campos obligatorios');
-        }
-        if (!email.includes('@') || password.length < 6) {
-            throw new Error('Formato de email inválido o contraseña demasiado corta (mínimo 6 caracteres)');
-        }
-
-        const normalizedEmail = email.trim().toLowerCase();
-
-        // 2. Verificar si el usuario ya existe a través del DAO
-        const exists = await userDAO.findByEmail(normalizedEmail);
-        if (exists) {
-            throw new Error('El email ya está registrado');
-        }
-
-        // 3. Hashear contraseña y mandar a guardar al DAO
-        const hashedPassword = await createHash(password);
-        
-        const newUser = await userDAO.create({
-            first_name,
-            last_name,
-            email: normalizedEmail,
-            password: hashedPassword
-            // El rol no se pasa desde el body público, toma el default 'user' del modelo
-        });
-
-        return newUser;
+    if (!first_name || !last_name || !email || !password) {
+      CustomError.createError({
+        name: 'UserValidationError',
+        cause: generateUserErrorParam(userData),
+        message: 'Faltan campos obligatorios para registrar al usuario.',
+        code: EErrors.INVALID_TYPES_ERROR,
+      });
     }
 
- async loginUser(email, password) {
-        if (!email || !password) {
-            throw new Error('Faltan campos obligatorios');
-        }
-
-        const normalizedEmail = email.trim().toLowerCase();
-
-        // 1. Buscamos el usuario real en Atlas a través del DAO
-        const user = await userDAO.findByEmail(normalizedEmail);
-        if (!user) {
-            throw new Error('Credenciales inválidas');
-        }
-
-        // 2. Comparamos la contraseña ingresada con el hash encriptado de la BD
-        const isPasswordValid = await isValidPassword(password, user.password);
-        if (!isPasswordValid) {
-            throw new Error('Credenciales inválidas');
-        }
-
-        // 3. Si todo está ok, generamos el token con los datos del documento real
-        const token = generateToken(user);
-        return token;
+    if (!email.includes('@') || password.length < 6) {
+      CustomError.createError({
+        name: 'UserValidationError',
+        message: 'Formato de email inválido o contraseña demasiado corta (mínimo 6 caracteres).',
+        code: EErrors.INVALID_TYPES_ERROR,
+      });
     }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const exists = await userDAO.findByEmail(normalizedEmail);
+    if (exists) {
+      CustomError.createError({
+        name: 'UserAlreadyExistsError',
+        message: 'El email ya se encuentra registrado.',
+        code: EErrors.INVALID_TYPES_ERROR,
+      });
+    }
+
+    const hashedPassword = await createHash(password);
+
+    const newUser = await userDAO.create({
+      first_name,
+      last_name,
+      email: normalizedEmail,
+      password: hashedPassword,
+    });
+
+    // Sanitizamos la respuesta para no devolver la contraseña encriptada
+    const userResponse = newUser.toObject ? newUser.toObject() : { ...newUser };
+    delete userResponse.password;
+
+    return userResponse;
+  }
+
+  /**
+   * Autentica credenciales y devuelve token JWT
+   */
+  async loginUser(email, password) {
+    if (!email || !password) {
+      CustomError.createError({
+        name: 'AuthenticationError',
+        message: 'Debes proporcionar email y contraseña.',
+        code: EErrors.AUTHENTICATION_ERROR,
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await userDAO.findByEmail(normalizedEmail);
+    if (!user) {
+      CustomError.createError({
+        name: 'AuthenticationError',
+        message: 'Credenciales inválidas.',
+        code: EErrors.AUTHENTICATION_ERROR,
+      });
+    }
+
+    const isPasswordValid = await isValidPassword(password, user.password);
+    if (!isPasswordValid) {
+      CustomError.createError({
+        name: 'AuthenticationError',
+        message: 'Credenciales inválidas.',
+        code: EErrors.AUTHENTICATION_ERROR,
+      });
+    }
+
+    const token = generateToken(user);
+    return { token, user: { id: user._id || user.id, email: user.email, role: user.role } };
+  }
 }
 
 export const sessionService = new SessionService();

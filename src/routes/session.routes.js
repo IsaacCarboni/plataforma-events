@@ -5,50 +5,34 @@ import { authMiddleware } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
-/**
- * Registro Público de Usuarios
- * (Comentamos temporalmente el filtro de rol para permitir registrar 'organizer' desde Postman)
- */
-router.post('/register', 
-    /* (req, res, next) => {
-        if (req.body.role) {
-            req.body.role = 'user'; 
-        }
-        next();
-    }, */
-    passport.authenticate('register', { session: false, failureRedirect: '/api/sessions/fail-register' }), 
-    async (req, res) => {
-        res.status(201).json({ status: "success", message: "Usuario registrado con éxito." });
-    }
+// POST /api/sessions/register
+router.post(
+  '/register',
+  passport.authenticate('register', { session: false, failureRedirect: '/api/sessions/fail-register' }),
+  async (req, res) => {
+    return res.status(201).json({ status: 'success', message: 'Usuario registrado con éxito.' });
+  }
 );
 
 router.get('/fail-register', (req, res) => {
-    res.status(400).json({ status: "error", message: "Error al registrar: El email ya existe o los datos son inválidos." });
+  return res.status(400).json({ status: 'error', message: 'Error al registrar: El email ya existe o los datos son inválidos.' });
 });
 
-/**
- * Autenticación y Login
- */
-router.post('/login', 
-    passport.authenticate('login', { session: false, failureRedirect: '/api/sessions/fail-login' }), 
-    login
+// POST /api/sessions/login
+router.post(
+  '/login',
+  passport.authenticate('login', { session: false, failureRedirect: '/api/sessions/fail-login' }),
+  login
 );
 
 router.get('/fail-login', (req, res) => {
-    res.status(401).json({ status: "error", message: "Credenciales inválidas." });
+  return res.status(401).json({ status: 'error', message: 'Credenciales inválidas.' });
 });
 
-/**
- * Perfil de la Sesión Actual
- */
-router.get('/current', 
-    authMiddleware, 
-    getSessionProfile
-);
+// GET /api/sessions/current
+router.get('/current', authMiddleware, getSessionProfile);
 
-/**
- * Cierre de Sesión
- */
+// POST /api/sessions/logout
 router.post('/logout', logout);
 
 export default router;

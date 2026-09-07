@@ -7,8 +7,8 @@ WORKDIR /app
 # Copiamos primero los archivos de dependencias para aprovechar la caché de Docker
 COPY package*.json ./
 
-# Instalamos las dependencias
-RUN npm install
+# Instalamos únicamente dependencias de producción (omitimos devDependencies)
+RUN npm ci --only=production
 
 # Copiamos todo el código fuente del proyecto
 COPY . .
@@ -16,5 +16,5 @@ COPY . .
 # Exponemos el puerto de Express
 EXPOSE 8080
 
-# Comando para iniciar la aplicación
-CMD ["npm", "run", "dev"]
+# Comando directo para ejecutar la app en producción (evita la capa extra de npm)
+CMD ["node", "app.js"]

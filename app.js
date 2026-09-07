@@ -9,25 +9,25 @@ import { connectDB } from './src/config/db.config.js';
 import eventRoutes from './src/routes/event.routes.js';
 import sessionRoutes from './src/routes/session.routes.js';
 import ticketRoutes from './src/routes/ticket.routes.js';
-import errorHandler from './src/middlewares/errors/index.js'; // 👈 1. Importación del manejador centralizado de errores
+import errorHandler from './src/middlewares/errors/index.js';
 
 dotenv.config();
 
 const app = express();
 
-// Inicialización de la base de datos MongoDB Atlas
+// Inicialización de la base de datos MongoDB
 connectDB();
 
-// Middlewares globales de parsing de datos
+// Middlewares globales de parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Inicialización de Passport y estrategias de autenticación
+// Inicialización de Passport
 initializePassport();
 app.use(passport.initialize());
 
-// Configuración de opciones para Swagger
+// Configuración de Swagger (Documentación OpenAPI)
 const swaggerOptions = {
     definition: {
         openapi: '3.0.1',
@@ -40,23 +40,25 @@ const swaggerOptions = {
     apis: ['./src/docs/**/*.yaml']
 };
 
-// Generación del esquema OpenAPI
 const specs = swaggerJSDoc(swaggerOptions);
-
-// Endpoint visual interactivo (Swagger UI)
 app.use('/api/docs', swaggerUiExpress.serve, swaggerUiExpress.setup(specs));
+
+// Endpoint de verificación de estado (Healthcheck)
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'up', message: 'Servidor activo y operando correctamente.' });
+});
 
 // Mapeo de Enrutadores principales
 app.use('/api/events', eventRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api', ticketRoutes);
 
-// Endpoint de verificación de estado (Healthcheck)
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'up', message: 'Servidor activo y operando correctamente.' });
+// Manejador para rutas no encontradas (404 Fallback)
+app.use((req, res) => {
+    res.status(404).json({ status: 'error', message: `Ruta no encontrada: ${req.originalUrl}` });
 });
 
-// 👈 2. Middleware de errores centralizado (SIEMPRE después de todas las rutas)
+// Middleware de errores centralizado (SIEMPRE al final de la cadena)
 app.use(errorHandler);
 
 export default app;

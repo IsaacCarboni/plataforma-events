@@ -1,15 +1,24 @@
 import redisClient from '../config/redis.config.js';
 
+/**
+ * Invalida de forma no bloqueante todas las claves de caché del módulo de eventos
+ */
 export const clearEventsCache = async () => {
-  if (!redisClient.isOpen) return;
+  if (!redisClient?.isOpen) return;
 
   try {
-    const keys = await redisClient.keys('events:*');
-    if (keys.length > 0) {
-      await redisClient.del(keys);
-      console.log(`🧹 [Cache Invalidation] Se eliminaron ${keys.length} clave(s) de Redis.`);
+    const keysToDelete = [];
+
+    // Usamos scanIterator en lugar de keys() para no bloquear el hilo de Redis
+    for await (const key of redisClient.scanIterator({ MATCH: 'events:*', COUNT: 100 })) {
+      keysToDelete.push(key);
+    }
+
+    if (keysToDelete.length > 0) {
+      await redisClient.del(keysToDelete);
+      console.log(`🧹 [Cache Invalidation] Se eliminaron ${keysToDelete.length} clave(s) de Redis.`);
     }
   } catch (error) {
-    console.error('Error al limpiar el caché:', error.message);
+    console.error('⚠️ [Cache Invalidation Error] Error al limpiar el caché:', error.message);
   }
 };

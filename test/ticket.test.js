@@ -5,37 +5,60 @@ import app from '../app.js';
 const requester = supertest(app);
 
 describe('=== Suite de Pruebas: Módulo de Tickets (/api/tickets) ===', () => {
+  let authToken = '';
+  const fakeId = '650c1f2e8b1d2c3a4b5c6d7e'; // MongoDB ObjectId mock
 
-    // 1. TEST: Acceso restringido (Sin Login)
-    // Validación de seguridad: Nadie puede ver tickets ajenos sin estar logueado
-    it('GET /api/tickets/my-tickets - Debería retornar 401/403 si el usuario no está logueado', async () => {
-        const response = await requester.get('/api/tickets/my-tickets');
-        
-        // Esperamos que falle porque no enviamos el token/cookie
-        expect(response.status).to.be.oneOf([401, 403]);
+  // Previo a los tests de negocio, registramos y logueamos un usuario de prueba para obtener JWT
+  before(async () => {
+    const testUser = {
+      first_name: 'Tester',
+      last_name: 'Tickets',
+      email: `ticket_test_${Date.now()}@test.com`,
+      password: 'Password123!',
+    };
+
+    await requester.post('/api/sessions/register').send(testUser);
+    const loginRes = await requester.post('/api/sessions/login').send({
+      email: testUser.email,
+      password: testUser.password,
     });
 
-    // 2. TEST: Intento de Inscripción (Evento Inexistente)
-    // Validación de negocio: No se puede comprar tickets para un ID que no existe
-    it('POST /api/events/:eid/tickets - Debería retornar 404 o 401 si el evento no existe', async () => {
-        const fakeEventId = '650c1f2e8b1d2c3a4b5c6d7e'; // ID formato MongoDB
-        
-        const response = await requester
-            .post(`/api/events/${fakeEventId}/tickets`)
-            .send({ quantity: 1 });
+    authToken = loginRes.body.token;
+  });
 
-        // Puede fallar por 401 (auth) o 404 (evento no encontrado)
-        expect(response.status).to.be.oneOf([401, 404]);
-    });
+  // 1. SEGURIDAD: Rechazo sin token
+  it('GET /api/tickets/my-tickets - Debería retornar 401 si no se envía token', async () => {
+    const response = await requester.get('/api/tickets/my-tickets');
 
-    // 3. TEST: Cancelación (Ticket Inexistente)
-    // Validación de lógica: Si el ticket no existe, no se puede cancelar
-    it('PATCH /api/tickets/:tid/cancel - Debería retornar 404 o 401 al intentar cancelar un ticket inexistente', async () => {
-        const fakeTicketId = '650c1f2e8b1d2c3a4b5c6d7e';
+    expect(response.status).to.equal(401);
+  });
 
-        const response = await requester.patch(`/api/tickets/${fakeTicketId}/cancel`);
+  // 2. ACCESO AUTENTICADO: Retorno de tickets del usuario
+  it('GET /api/tickets/my-tickets - Debería retornar 200 y una lista vacía para usuario nuevo', async () => {
+    const response = await requester
+      .get('/api/tickets/my-tickets')
+      .set('Authorization', `Bearer ${authToken}`);
 
-        expect(response.status).to.be.oneOf([401, 404]);
-    });
+    expect(response.status).to.equal(200);
+    expect(response.body).to.be.an('array');
+  });
 
+  // 3. NEGOCIO: Inscripción a Evento Inexistente
+  it('POST /api/events/:eid/tickets - Debería retornar 404 al intentar inscribirse a un evento inexistente', async () => {
+    const response = await requester
+      .post(`/api/events/${fakeId}/tickets`)
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({ quantity: 1 });
+
+    expect(response.status).to.equal(404);
+  });
+
+  // 4. NEGOCIO: Cancelar Ticket Inexistente
+  it('PATCH /api/tickets/:tid/cancel - Debería retornar 404 al cancelar un ticket no registrado', async () => {
+    const response = await requester
+      .patch(`/api/tickets/${fakeId}/cancel`)
+      .set('Authorization', `Bearer ${authToken}`);
+
+    expect(response.status).to.equal(404);
+  });
 });

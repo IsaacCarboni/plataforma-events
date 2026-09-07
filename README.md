@@ -122,7 +122,7 @@ La API cuenta con documentación viva generada mediante **OpenAPI 3.0**. Una vez
 
 El proyecto orquesta tanto el servicio Node.js como la instancia de **Redis Stack** en contenedores aislados:
 
-1. **Configurar las variables de entorno:**
+1. **Configurar las variables de entorno:**  
    Creá el archivo `.env` en la raíz del proyecto agregando las credenciales necesarias y la dirección del servicio Redis (`REDIS_URL=redis://plataforma-events-redis:6379`).
 
 2. **Levantar la infraestructura completa:**
@@ -166,4 +166,4 @@ npm run dev
 👤 Autor
 Isaac Carboni - Backend Developer
 
-GitHub Profile 
+GitHub Profile
