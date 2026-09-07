@@ -1,7 +1,7 @@
 import passport from 'passport';
 import local from 'passport-local';
 import jwt from 'passport-jwt';
-import { userService } from '../services/index.js'; 
+import { userService } from '../services/user.service.js';
 import { createHash, isValidPassword } from '../utils/hash.js'; 
 
 const LocalStrategy = local.Strategy;

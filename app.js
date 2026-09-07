@@ -37,7 +37,7 @@ const swaggerOptions = {
             description: 'API RESTful para la gestión integral de eventos, reservas de tickets y autenticación basada en JWT.'
         },
     },
-    apis: ['./src/docs/**/*.yaml']
+    apis: ['./src/docs/**/*.yaml', './docs/**/*.yaml']
 };
 
 const specs = swaggerJSDoc(swaggerOptions);
@@ -58,7 +58,13 @@ app.use((req, res) => {
     res.status(404).json({ status: 'error', message: `Ruta no encontrada: ${req.originalUrl}` });
 });
 
-// Middleware de errores centralizado (SIEMPRE al final de la cadena)
+// Middleware de errores centralizado
 app.use(errorHandler);
+
+// Inicialización del servidor HTTP para Docker (escuchando en 0.0.0.0)
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Servidor escuchando peticiones en el puerto: ${PORT}`);
+});
 
 export default app;
