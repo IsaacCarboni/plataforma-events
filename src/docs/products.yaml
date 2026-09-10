@@ -1,0 +1,81 @@
+paths:
+  /api/products:
+    get:
+      summary: Obtener el listado de productos y cortes
+      tags:
+        - Products
+      responses:
+        "200":
+          description: Lista de productos obtenida exitosamente
+        "500":
+          description: Error interno del servidor
+
+    post:
+      summary: Registrar un nuevo producto o corte de carne
+      tags:
+        - Products
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Asado de Tira"
+                category:
+                  type: string
+                  example: "Carne Vacuna"
+                pricePerKg:
+                  type: number
+                  example: 8500
+                stockKg:
+                  type: number
+                  example: 45.5
+                batchNumber:
+                  type: string
+                  example: "LOTE-2026-0910"
+                expirationDate:
+                  type: string
+                  format: date-time
+                  example: "2026-09-13T00:00:00.000Z"
+      responses:
+        "201":
+          description: Producto registrado exitosamente
+        "400":
+          description: Error en los datos enviados
+
+  /api/products/expiring:
+    get:
+      summary: Obtener productos próximos a vencer
+      tags:
+        - Products
+      parameters:
+        - in: query
+          name: days
+          schema:
+            type: integer
+            default: 3
+          description: Umbral de días límite antes del vencimiento
+      responses:
+        "200":
+          description: Lista de productos próximos a vencer obtenida con éxito
+
+  /api/products/{pid}:
+    get:
+      summary: Obtener detalle de un producto por ID
+      tags:
+        - Products
+      parameters:
+        - in: path
+          name: pid
+          required: true
+          schema:
+            type: string
+          description: ID del producto en MongoDB
+      responses:
+        "200":
+          description: Producto encontrado
+        "404":
+          description: Producto no encontrado

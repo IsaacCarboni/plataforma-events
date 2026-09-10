@@ -9,6 +9,7 @@ import { connectDB } from './src/config/db.config.js';
 import eventRoutes from './src/routes/event.routes.js';
 import sessionRoutes from './src/routes/session.routes.js';
 import ticketRoutes from './src/routes/ticket.routes.js';
+import productsRouter from './src/routes/products.router.js';
 import errorHandler from './src/middlewares/errors/index.js';
 
 dotenv.config();
@@ -34,7 +35,7 @@ const swaggerOptions = {
         info: {
             title: 'Documentación de Plataforma Events API',
             version: '1.0.0',
-            description: 'API RESTful para la gestión integral de eventos, reservas de tickets y autenticación basada en JWT.'
+            description: 'API RESTful para la gestión integral de eventos, reservas de tickets y módulo de carnicería (Alfa y Omega).'
         },
     },
     apis: ['./src/docs/**/*.yaml', './docs/**/*.yaml']
@@ -51,6 +52,7 @@ app.get('/api/health', (req, res) => {
 // Mapeo de Enrutadores principales
 app.use('/api/events', eventRoutes);
 app.use('/api/sessions', sessionRoutes);
+app.use('/api/products', productsRouter);
 app.use('/api', ticketRoutes);
 
 // Manejador para rutas no encontradas (404 Fallback)
