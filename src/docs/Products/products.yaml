@@ -79,3 +79,50 @@ paths:
           description: Producto encontrado
         "404":
           description: Producto no encontrado
+
+    put:
+      summary: Actualizar datos o stock de un producto
+      tags:
+        - Products
+      parameters:
+        - in: path
+          name: pid
+          required: true
+          schema:
+            type: string
+          description: ID del producto a modificar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pricePerKg:
+                  type: number
+                  example: 8900
+                stockKg:
+                  type: number
+                  example: 30.0
+      responses:
+        "200":
+          description: Producto actualizado correctamente
+        "404":
+          description: Producto no encontrado
+
+    delete:
+      summary: Eliminar un producto del inventario
+      tags:
+        - Products
+      parameters:
+        - in: path
+          name: pid
+          required: true
+          schema:
+            type: string
+          description: ID del producto a eliminar
+      responses:
+        "200":
+          description: Producto eliminado exitosamente
+        "404":
+          description: Producto no encontrado

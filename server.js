@@ -1,15 +1,35 @@
-import express from 'express';
-import passport from 'passport';
-import initializePassport from './src/config/passport.config.js';
 import app from './app.js';
+import { connectDB } from './src/config/db.config.js';
 
 const PORT = process.env.PORT || 8080;
 
-// Inicializamos Passport
-initializePassport();
-app.use(passport.initialize());
+// Función de arranque de la infraestructura
+const startServer = async () => {
+  try {
+    // 1. Conectamos la base de datos antes de escuchar peticiones
+    await connectDB();
 
-// Levantamos el servidor en 0.0.0.0 para que Docker exponga el puerto
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Servidor escuchando peticiones en el puerto: ${PORT}`);
-});
+    // 2. Levantamos el servidor en 0.0.0.0 (esencial para Docker)
+    const server = app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Servidor escuchando peticiones en el puerto: ${PORT}`);
+    });
+
+    // 3. Graceful Shutdown: Apagado limpio del contenedor Docker
+    const shutdown = (signal) => {
+      console.log(`\n⚠️ Recibida señal ${signal}. Cerrando servidor...`);
+      server.close(() => {
+        console.log('✅ Servidor cerrado correctamente.');
+        process.exit(0);
+      });
+    };
+
+    process.on('SIGINT', () => shutdown('SIGINT'));   // Para Ctrl+C en terminal
+    process.on('SIGTERM', () => shutdown('SIGTERM')); // Para docker stop / docker-compose down
+
+  } catch (error) {
+    console.error('❌ Error al iniciar el servidor:', error.message);
+    process.exit(1);
+  }
+};
+
+startServer();

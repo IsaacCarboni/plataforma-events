@@ -16,5 +16,5 @@ COPY . .
 # Exponemos el puerto de Express
 EXPOSE 8080
 
-# Comando directo para ejecutar la app en producción (evita la capa extra de npm)
-CMD ["node", "app.js"]
+# Comando directo para ejecutar la app en producción
+CMD ["node", "server.js"]
