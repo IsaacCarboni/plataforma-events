@@ -10,6 +10,7 @@
     "test": "mocha test/**/*.test.js --timeout 10000 --exit"
   },
   "dependencies": {
+    "@faker-js/faker": "^10.6.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
@@ -25,7 +26,9 @@
     "passport-local": "^1.0.0",
     "redis": "^6.2.1",
     "swagger-jsdoc": "^6.3.0",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
     "chai": "^5.1.1",

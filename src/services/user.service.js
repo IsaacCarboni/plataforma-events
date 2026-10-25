@@ -1,4 +1,4 @@
-import { userDAO } from '../dao/user.dao.js';
+import { userRepository } from '../repositories/user.repository.js';
 import CustomError from './errors/CustomError.js';
 import EErrors from './errors/enums.js';
 
@@ -9,7 +9,7 @@ export const userService = {
   getUserByEmail: async (email) => {
     if (!email) return null;
     const normalizedEmail = email.trim().toLowerCase();
-    return await userDAO.findByEmail(normalizedEmail);
+    return await userRepository.findByEmail(normalizedEmail); // 👈 Usando el repositorio
   },
 
   /**
@@ -24,7 +24,7 @@ export const userService = {
       });
     }
 
-    const user = await userDAO.findById(id);
+    const user = await userRepository.findById(id); // 👈 Usando el repositorio
     if (!user) {
       CustomError.createError({
         name: 'NotFoundError',
@@ -52,6 +52,6 @@ export const userService = {
       userData.email = userData.email.trim().toLowerCase();
     }
 
-    return await userDAO.create(userData);
+    return await userRepository.create(userData); // 👈 Usando el repositorio
   },
 };

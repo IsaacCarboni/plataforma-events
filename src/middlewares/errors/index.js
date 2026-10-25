@@ -1,8 +1,19 @@
 import EErrors from '../../services/errors/enums.js';
+import logger from '../../utils/logger.js'; // 👈 Importamos Winston
 
 export default (error, req, res, next) => {
-  // Registrar el log detallado del error
-  console.error(`[ERROR LOG]: ${error.name || 'UnhandledError'} - ${error.cause || error.message}`);
+  // Registrar el log detallado del error usando Winston según su tipo o código
+  if (error.code === EErrors.INVALID_TYPES_ERROR) {
+    logger.warning(`[VALIDATION WARNING] ${error.name || 'InvalidTypesError'}: ${error.message} | Causa: ${error.cause || 'N/A'}`);
+  } else if (error.code === EErrors.AUTHENTICATION_ERROR || error.code === EErrors.AUTHORIZATION_ERROR) {
+    logger.warning(`[SECURITY WARNING] ${error.name || 'AuthError'}: ${error.message}`);
+  } else if (error.code === EErrors.RESOURCE_NOT_FOUND) {
+    logger.warning(`[NOT FOUND] ${error.name || 'NotFoundError'}: ${error.message}`);
+  } else if (error.code === EErrors.DATABASE_ERROR) {
+    logger.fatal(`[FATAL DATABASE ERROR] ${error.message}`);
+  } else {
+    logger.error(`[UNHANDLED ERROR] ${error.name || 'UnhandledError'}: ${error.message} | Causa: ${error.cause || 'N/A'}`);
+  }
 
   switch (error.code) {
     case EErrors.INVALID_TYPES_ERROR:

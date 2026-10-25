@@ -1,10 +1,8 @@
-import { EventDAO } from '../dao/event.dao.js';
 import { EventRepository } from '../repositories/event.repository.js';
 import CustomError from './errors/CustomError.js';
 import EErrors from './errors/enums.js';
 
-const eventRepository = new EventRepository(new EventDAO());
-
+const eventRepository = new EventRepository();
 export class EventService {
   static async createEvent(eventData, userId) {
     const eventDate = new Date(eventData.date);

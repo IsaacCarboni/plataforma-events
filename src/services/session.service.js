@@ -1,4 +1,4 @@
-import { userDAO } from '../dao/user.dao.js';
+import { userRepository } from '../repositories/user.repository.js';
 import { createHash, isValidPassword } from '../utils/hash.js';
 import { generateToken } from '../utils/jwt.js';
 import CustomError from './errors/CustomError.js';
@@ -31,7 +31,7 @@ class SessionService {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    const exists = await userDAO.findByEmail(normalizedEmail);
+    const exists = await userRepository.findByEmail(normalizedEmail); // 👈 Usando repositorio
     if (exists) {
       CustomError.createError({
         name: 'UserAlreadyExistsError',
@@ -42,7 +42,7 @@ class SessionService {
 
     const hashedPassword = await createHash(password);
 
-    const newUser = await userDAO.create({
+    const newUser = await userRepository.create({ // 👈 Usando repositorio
       first_name,
       last_name,
       email: normalizedEmail,
@@ -70,7 +70,7 @@ class SessionService {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    const user = await userDAO.findByEmail(normalizedEmail);
+    const user = await userRepository.findByEmail(normalizedEmail); // 👈 Usando repositorio
     if (!user) {
       CustomError.createError({
         name: 'AuthenticationError',

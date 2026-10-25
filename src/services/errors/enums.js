@@ -5,6 +5,8 @@ const EErrors = {
   AUTHENTICATION_ERROR: 4,
   AUTHORIZATION_ERROR: 5,
   RESOURCE_NOT_FOUND: 6,
+  PRODUCT_NOT_FOUND: 7,
+  INVALID_MOCK_PARAMS: 8
 };
 
 export default EErrors;

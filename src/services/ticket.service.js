@@ -1,5 +1,3 @@
-import { TicketDAO } from '../dao/ticket.dao.js';
-import { EventDAO } from '../dao/event.dao.js';
 import { TicketRepository } from '../repositories/ticket.repository.js';
 import { EventRepository } from '../repositories/event.repository.js';
 import { MailService } from './mail.service.js';
@@ -7,8 +5,8 @@ import CustomError from './errors/CustomError.js';
 import EErrors from './errors/enums.js';
 import crypto from 'crypto';
 
-const ticketRepository = new TicketRepository(new TicketDAO());
-const eventRepository = new EventRepository(new EventDAO());
+const ticketRepository = new TicketRepository();
+const eventRepository = new EventRepository();
 
 export class TicketService {
   /**

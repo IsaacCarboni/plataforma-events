@@ -1,21 +1,22 @@
-# 🚀 Plataforma de Eventos e Inscripciones & Módulo de Gestión de Stock (ShipNow Base)
+# 🚀 Plataforma de Eventos e Inscripciones & Módulo de Gestión de Stock (ShipNow API)
 
-API RESTful empresarial para la gestión integral de eventos, reservas de tickets en tiempo real y administración modular de inventario/stock. Implementa una estrategia de caché de alta velocidad con **Redis**, documentación interactiva con **Swagger**, arquitectura desacoplada en **3 capas** y containerización completa con **Docker & Docker Compose**.
+API RESTful empresarial para la gestión integral de eventos, reservas de tickets en tiempo real y administración modular de inventario/stock. Implementa una estrategia de caché de alta velocidad con **Redis**, documentación interactiva con **Swagger**, arquitectura desacoplada en **3 capas**, sistema centralizado de logs con **Winston** y containerización completa con **Docker & Docker Compose**.
 
 ---
 
 ## 🛠️ Tecnologías Utilizadas
 
-* **Node.js & Express.js** - Entorno de ejecución en el servidor (ES Modules) y framework HTTP.
-* **Redis** - In-Memory Data Store para caché de lecturas, logrando tiempos de respuesta sub-milisegundo (~1.9 ms).
-* **MongoDB Atlas & Mongoose** - Persistencia NoSQL con modelado mediante Schemas estrictos e índices compuestos.
-* **Docker & Docker Compose** - Orquestación de contenedores en entorno aislado.
-* **Swagger / OpenAPI 3.0** - Documentación interactiva de la API integrada.
-* **Passport.js & JWT** - Autenticación centralizada mediante cookies seguras `HTTP-Only`.
-* **Multer** - Middleware para procesamiento y carga de imágenes de productos sanitizadas.
-* **Nodemailer** - Servicio transaccional para envío automático de confirmaciones.
-* **Bcrypt** - Hashing criptográfico para protección de contraseñas.
-* **Dotenv** - Manejo y validación centralizada de variables de entorno al arranque.
+- **Node.js & Express.js:** Entorno de ejecución en el servidor (ES Modules) y framework HTTP.
+- **Redis:** In-Memory Data Store para caché de lecturas, logrando tiempos de respuesta sub-milisegundo (~1.9 ms).
+- **MongoDB Atlas & Mongoose:** Persistencia NoSQL con modelado mediante Schemas estrictos e índices compuestos.
+- **Winston & Winston Daily Rotate File:** Sistema de logging profesional estructurado por niveles y persistencia con rotación de archivos.
+- **Docker & Docker Compose:** Orquestación de contenedores en entorno aislado.
+- **Swagger / OpenAPI 3.0:** Documentación interactiva de la API integrada.
+- **Passport.js & JWT:** Autenticación centralizada mediante cookies seguras `HTTP-Only`.
+- **Multer:** Middleware para procesamiento y carga de imágenes de productos sanitizadas.
+- **Nodemailer:** Servicio transaccional para envío automático de confirmaciones.
+- **Bcrypt:** Hashing criptográfico para protección de contraseñas.
+- **Dotenv:** Manejo y validación centralizada de variables de entorno al arranque.
 
 ---
 
@@ -23,8 +24,8 @@ API RESTful empresarial para la gestión integral de eventos, reservas de ticket
 
 En cumplimiento con los requerimientos de arquitectura en 3 capas del proyecto:
 
-* **Capa de Servicio (`src/services/`):** Concentra la **lógica de negocio pura** del dominio. Se encarga de procesar las reglas (validación de cupos, cálculo de vencimientos de stock, filtros de permisos) sin conocer detalles técnicos de la base de datos ni depender de Mongoose.
-* **Capa de Repositorio (`src/repositories/`):** Abstrae la **persistencia y acceso a datos**. Es la única capa con conocimiento de Mongoose y MongoDB Atlas. Permite que, si en el futuro se cambia la base de datos o el ORM/ODM, la capa de servicio se mantenga intacta.
+- **Capa de Servicio (`src/services/`):** Concentra la **lógica de negocio pura** del dominio. Se encarga de procesar las reglas (validación de cupos, cálculo de vencimientos de stock, filtros de permisos) sin conocer detalles técnicos de la base de datos ni depender de Mongoose.
+- **Capa de Repositorio (`src/repositories/`):** Abstrae la **persistencia y acceso a datos**. Es la única capa con conocimiento de Mongoose y MongoDB Atlas. Permite que, si en el futuro se cambia la base de datos o el ORM/ODM, la capa de servicio se mantenga intacta.
 
 ---
 
@@ -32,24 +33,41 @@ En cumplimiento con los requerimientos de arquitectura en 3 capas del proyecto:
 
 El proyecto sigue el patrón de arquitectura desacoplada y el principio de responsabilidad única (SRP):
 
-* `src/config/` - Configuración y validación del entorno (`env.config.js`, `db.config.js`, `redis.config.js`, `swagger.js`, `passport.config.js`).
-* `src/controllers/` - Manejo de peticiones HTTP, parseo de parámetros/queries y respuestas sanitizadas.
-* `src/services/` - Lógica de negocio pura: validaciones temporales, control de cupos y alertas de stock/vencimientos.
-* `src/repositories/` - Capa de abstracción de datos para desacoplar Mongoose/MongoDB de la capa de servicio.
-* `src/dtos/` - Data Transfer Objects (`UserDTO`, `EventDTO`, `TicketDTO`) para filtrar y proteger datos sensibles.
-* `src/models/` - Esquemas Mongoose (`user.model.js`, `event.model.js`, `ticket.model.js`, `product.model.js`).
-* `src/constants/` - Diccionario congelado (`Object.freeze`) para roles y estados del sistema.
-* `src/middlewares/` - Autenticación JWT, control de accesos por roles (RBAC), manejo de errores y caché con Redis.
-* `src/routes/` - Definición de enrutadores principales (`session.routes.js`, `event.routes.js`, `ticket.routes.js`, `products.router.js`, `user.routes.js`).
-* `src/utils/` - Helpers de hashing, firma de JWTs y cargador de archivos (`uploader`).
+- `src/config/`: Configuración y validación del entorno (`env.config.js`, `db.config.js`, `redis.config.js`, `swagger.js`, `passport.config.js`).
+- `src/controllers/`: Manejo de peticiones HTTP, parseo de parámetros/queries y respuestas sanitizadas.
+- `src/services/`: Lógica de negocio pura: validaciones temporales, control de cupos y alertas de stock/vencimientos.
+- `src/repositories/`: Capa de abstracción de datos para desacoplar Mongoose/MongoDB de la capa de servicio.
+- `src/dtos/`: Data Transfer Objects (`UserDTO`, `EventDTO`, `TicketDTO`) para filtrar y proteger datos sensibles.
+- `src/models/`: Esquemas Mongoose (`user.model.js`, `event.model.js`, `ticket.model.js`, `product.model.js`).
+- `src/constants/`: Diccionario congelado (`Object.freeze`) para roles y estados del sistema.
+- `src/middlewares/`: Autenticación JWT, control de accesos por roles (RBAC), manejo centralizado de errores y caché con Redis.
+- `src/routes/`: Definición de enrutadores principales (`session.routes.js`, `event.routes.js`, `ticket.routes.js`, `products.router.js`, `user.routes.js`, `mock.routes.js`).
+- `src/utils/`: Helpers de hashing, firma de JWTs, cargador de archivos (`uploader`) y logger centralizado con **Winston** (`logger.js`).
+
+---
+
+## 📊 Sistema de Logging y Monitoreo (Módulo 4)
+
+El proyecto reemplaza los registros en consola tradicionales por un logger centralizado utilizando **Winston**, clasificado por niveles de importancia:
+
+- **Niveles definidos:** `fatal`, `error`, `warning`, `info`, `http`, `debug`.
+- **Comportamiento por Entorno:** 
+  - *Desarrollo (`development`):* Muestra logs detallados desde `debug` hacia arriba en la consola de la terminal.
+  - *Producción (`production`):* Controla el flujo registrando desde nivel `info` en adelante.
+- **Persistencia y Rotación:** Los errores de nivel `error` y `fatal` se guardan automáticamente en la carpeta `logs/` mediante `winston-daily-rotate-file`, manteniendo un historial ordenado por fecha.
+- **Exclusión en Git:** La carpeta `logs/` está completamente ignorada en el archivo `.gitignore` para evitar subir registros locales al repositorio.
+
+### 🔍 Endpoint de Prueba del Logger
+Para verificar rápidamente el funcionamiento de todos los niveles del logger, la API expone un endpoint de prueba interno:
+- **GET** `/api/logger-test`
 
 ---
 
 ## ⚡ Estrategia de Caché y Performance (Redis)
 
-* **Cache Miss:** Si los datos no residen en memoria, se consulta MongoDB y se almacenan en Redis con un TTL (Time-To-Live).
-* **Cache Hit:** Las lecturas subsecuentes son servidas desde RAM en tiempo récord (~1.9 ms).
-* **Invalidación Automática:** Mutaciones en base de datos (`POST`, `PUT`, `DELETE`, `PATCH`) invalidan la caché para asegurar la consistencia.
+- **Cache Miss:** Si los datos no residen en memoria, se consulta MongoDB y se almacenan en Redis con un TTL (Time-To-Live).
+- **Cache Hit:** Las lecturas subsecuentes son servidas desde RAM en tiempo récord (~1.9 ms).
+- **Invalidación Automática:** Mutaciones en base de datos (`POST`, `PUT`, `DELETE`, `PATCH`) invalidan la caché para asegurar la consistencia.
 
 ---
 
@@ -80,25 +98,30 @@ El proyecto sigue el patrón de arquitectura desacoplada y el principio de respo
 ## 🛣️ Endpoints Principales
 
 ### 🔒 Autenticación (`/api/sessions`)
-* `POST /api/sessions/register` - Registro público de usuarios.
-* `POST /api/sessions/login` - Autenticación y generación de cookie `HTTP-Only`.
-* `GET /api/sessions/current` - Perfil de sesión activa mediante DTO.
-* `POST /api/sessions/logout` - Cierre de sesión y destrucción de cookie.
+- `POST /api/sessions/register` - Registro público de usuarios.
+- `POST /api/sessions/login` - Autenticación y generación de cookie `HTTP-Only`.
+- `GET /api/sessions/current` - Perfil de sesión activa mediante DTO.
+- `POST /api/sessions/logout` - Cierre de sesión y destrucción de cookie.
 
 ### 📅 Eventos (`/api/events`)
-* `GET /api/events` - Listado de eventos paginado y cacheado en Redis.
-* `POST /api/events` - Creación de evento (requiere rol `organizer` o `admin`).
+- `GET /api/events` - Listado de eventos paginado y cacheado en Redis.
+- `POST /api/events` - Creación de evento (requiere rol `organizer` o `admin`).
 
 ### 🥩 Stock y Carnicería (`/api/products`)
-* `GET /api/products` - Catálogo completo de productos con filtros y paginación.
-* `GET /api/products/expiring` - Reporte de cortes/productos próximos a vencer.
-* `POST /api/products` - Registro de nuevos productos con imagen vía Multer.
+- `GET /api/products` - Catálogo completo de productos con filtros y paginación.
+- `GET /api/products/expiring` - Reporte de cortes/productos próximos a vencer.
+- `POST /api/products` - Registro de nuevos productos con imagen vía Multer.
+
+### 🧪 Mocking y Datos de Prueba (`/api/mocks`)
+- `GET /api/mocks/users?qty=10` - Genera y retorna usuarios falsos en memoria utilizando Faker (sin guardar en base).
+- `GET /api/mocks/products?qty=5` - Genera y retorna productos falsos en memoria utilizando Faker.
+- `POST /api/mocks/seed` - Realiza la carga masiva (seeding) de registros simulados directamente en MongoDB de forma controlada.
 
 ---
 
 ## 📄 Documentación Interactiva (Swagger)
 
-Accedé a la documentación interactiva OpenAPI 3.0 con el servidor iniciado:
+Accedé a la documentación interactiva OpenAPI 3.0 con el servidor iniciado:  
 👉 **`http://localhost:8080/api/docs`**
 
 ---
@@ -115,5 +138,3 @@ Bash
 docker-compose down
 👤 Autor
 Isaac Carboni - Backend Developer
-
-GitHub Profile
