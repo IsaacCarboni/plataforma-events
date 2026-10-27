@@ -1,4 +1,5 @@
 import redisClient from '../config/redis.config.js';
+import logger from '../utils/logger.js'; // 👈 1. Importamos Winston
 
 /**
  * Middleware para almacenar en caché las respuestas GET de la API en Redis.
@@ -20,7 +21,7 @@ export const cacheEvents = (ttlSeconds = 60) => {
         const diff = process.hrtime(startTime);
         const durationInMs = (diff[0] * 1e3 + diff[1] * 1e-6).toFixed(2);
 
-        console.log(`🚀 [Cache Hit] Redis: ${cacheKey} (${durationInMs}ms)`);
+        logger.info(`🚀 [Cache Hit] Redis: ${cacheKey} (${durationInMs}ms)`); // 👈 Reemplazado por Winston info
 
         res.setHeader('X-Response-Time', `${durationInMs}ms`);
         res.setHeader('X-Cache-Status', 'HIT (Redis)');
@@ -29,7 +30,7 @@ export const cacheEvents = (ttlSeconds = 60) => {
       }
 
       // --- CASO 2: CACHE MISS (Consulta a MongoDB) ---
-      console.log(`🐢 [Cache Miss] Consultando MongoDB...`);
+      logger.debug(`🐢 [Cache Miss] Consultando MongoDB para ${cacheKey}...`); // 👈 Reemplazado por Winston debug
 
       const originalJson = res.json.bind(res);
 
@@ -47,7 +48,7 @@ export const cacheEvents = (ttlSeconds = 60) => {
         // Escritura asíncrona no bloqueante en Redis si el status es OK
         if (res.statusCode === 200) {
           redisClient.setEx(cacheKey, ttlSeconds, JSON.stringify(body)).catch((err) => {
-            console.error('⚠️ Error no bloqueante al guardar en Redis:', err.message);
+            logger.error(`⚠️ Error no bloqueante al guardar en Redis: ${err.message}`); // 👈 Reemplazado por Winston error
           });
         }
 
@@ -56,7 +57,7 @@ export const cacheEvents = (ttlSeconds = 60) => {
 
       return next();
     } catch (error) {
-      console.error('⚠️ Error en middleware de caché (Fallback a BD):', error.message);
+      logger.error(`⚠️ Error en middleware de caché (Fallback a BD): ${error.message}`); // 👈 Reemplazado por Winston error
       return next();
     }
   };

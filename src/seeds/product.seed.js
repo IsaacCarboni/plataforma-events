@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import { productModel as ProductModel } from '../models/product.model.js';
+import logger from '../utils/logger.js'; // 👈 Importamos Winston
+
 dotenv.config();
 
 // Listado de cortes reales con precios de mercado
@@ -156,23 +158,23 @@ const seedProducts = async () => {
       throw new Error("No se encontró la variable de entorno MONGO_URI en el archivo .env");
     }
 
-    console.log("⏳ Conectando a MongoDB para ejecutar el seed...");
+    logger.info("Conectando a MongoDB para ejecutar el seed...");
     await mongoose.connect(mongoUri);
 
     // 1. Limpia los productos existentes para no duplicar
     await ProductModel.deleteMany({});
-    console.log("🧹 Colección de productos limpiada.");
+    logger.info("Colección de productos limpiada.");
 
     // 2. Inserta el listado completo
     const createdProducts = await ProductModel.insertMany(cortesIniciales);
-    console.log(`✅ ¡Se cargaron ${createdProducts.length} cortes de carne con éxito!`);
+    logger.info(`¡Se cargaron ${createdProducts.length} cortes de carne con éxito!`);
 
     await mongoose.disconnect();
-    console.log("🔌 Conexión cerrada. Script finalizado.");
+    logger.info("Conexión cerrada. Script de seeding finalizado.");
     process.exit(0);
 
   } catch (error) {
-    console.error("❌ Error al ejecutar el seeding de productos:", error);
+    logger.fatal(`Error crítico al ejecutar el seeding de productos: ${error.message}`);
     process.exit(1);
   }
 };

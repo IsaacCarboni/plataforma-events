@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import logger from '../utils/logger.js'; // 👈 Importamos Winston
 
 /**
  * Configuración y Conexión a la Base de Datos
@@ -17,10 +18,10 @@ const connectDB = async () => {
             serverSelectionTimeoutMS: 3000, 
         });
         
-        console.log("Conexión establecida con éxito a la base de datos.");
+        logger.info("Conexión establecida con éxito a la base de datos."); // 👈 Log con Winston
     } catch (error) {
-        console.error("Error crítico en el módulo de base de datos:", error.message);
-        console.warn("Verifique la conectividad de red y la lista blanca de direcciones IP en el panel.");
+        logger.fatal(`Error crítico en el módulo de base de datos: ${error.message}`); // 👈 Log fatal
+        logger.warning("Verifique la conectividad de red y la lista blanca de direcciones IP en el panel."); // 👈 Log warning
         
         process.exit(1);
     }

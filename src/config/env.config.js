@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import logger from '../utils/logger.js'; // 👈 Importamos Winston
 
 // Carga las variables definidas en el archivo .env a process.env
 dotenv.config();
@@ -10,12 +11,12 @@ const requiredEnvVars = ['PORT', 'MONGODB_URI', 'NODE_ENV'];
 
 /**
  * Validación previa: Verifica la presencia de cada variable requerida.
- * Si falta alguna, frena la ejecución de inmediato (process.exit) con un mensaje explicativo en consola.
+ * Si falta alguna, frena la ejecución de inmediato (process.exit) con un mensaje explicativo usando Winston.
  */
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
-    console.error(`\n❌ [ERROR CRÍTICO] Falta la variable de entorno obligatoria: [${envVar}]`);
-    console.error(`👉 Por favor, definila en tu archivo .env antes de iniciar la aplicación.\n`);
+    logger.fatal(`[ERROR CRÍTICO] Falta la variable de entorno obligatoria: [${envVar}]`);
+    logger.error(`Por favor, definila en tu archivo .env antes de iniciar la aplicación.`);
     process.exit(1); // Detiene la ejecución del proceso Node.js con código de falla
   }
 }

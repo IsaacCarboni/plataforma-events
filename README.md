@@ -131,10 +131,10 @@ Accedé a la documentación interactiva OpenAPI 3.0 con el servidor iniciado:
 1. Crear el archivo `.env` en la raíz del proyecto basándose en `.env.example`.
 2. Desplegar los servicios:
    ```bash
-   docker-compose up --build
+   docker compose up --build
 Detener los contenedores:
 
 Bash
-docker-compose down
+docker compose down
 👤 Autor
 Isaac Carboni - Backend Developer

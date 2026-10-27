@@ -1,4 +1,5 @@
 import { createClient } from 'redis';
+import logger from '../utils/logger.js'; // 👈 Importamos Winston
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
 
@@ -8,7 +9,7 @@ const redisClient = createClient({
     // Reintenta conectar automáticamente si la red parpadea
     reconnectStrategy: (retries) => {
       if (retries > 5) {
-        console.error('❌ Límite de reintentos de Redis alcanzado.');
+        logger.error('Límite de reintentos de Redis alcanzado.'); // 👈 Log con Winston
         return new Error('Redis no disponible');
       }
       // Reintenta aumentando el tiempo entre intentos (exponencial)
@@ -18,11 +19,11 @@ const redisClient = createClient({
 });
 
 redisClient.on('connect', () => {
-  console.log('⚡ Conexión establecida con éxito a Redis.');
+  logger.info('Conexión establecida con éxito a Redis.'); // 👈 Log con Winston
 });
 
 redisClient.on('error', (err) => {
-  console.error('❌ Error en el cliente de Redis:', err.message);
+  logger.error(`Error en el cliente de Redis: ${err.message}`); // 👈 Log con Winston
 });
 
 // Función explícita para conectar desde el servidor principal (server.js / app.js)
@@ -32,7 +33,7 @@ export const connectRedis = async () => {
       await redisClient.connect();
     }
   } catch (error) {
-    console.error('CRÍTICO: No se pudo conectar con Redis:', error.message);
+    logger.fatal(`CRÍTICO: No se pudo conectar con Redis: ${error.message}`); // 👈 Log fatal
   }
 };
 

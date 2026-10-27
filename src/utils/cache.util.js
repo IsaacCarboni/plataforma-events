@@ -1,4 +1,5 @@
 import redisClient from '../config/redis.config.js';
+import logger from '../utils/logger.js'; // 👈 1. Importamos Winston
 
 /**
  * Invalida de forma no bloqueante todas las claves de caché del módulo de eventos
@@ -16,9 +17,9 @@ export const clearEventsCache = async () => {
 
     if (keysToDelete.length > 0) {
       await redisClient.del(keysToDelete);
-      console.log(`🧹 [Cache Invalidation] Se eliminaron ${keysToDelete.length} clave(s) de Redis.`);
+      logger.info(`[Cache Invalidation] Se eliminaron ${keysToDelete.length} clave(s) de Redis.`); // 👈 Reemplazado por Winston info
     }
   } catch (error) {
-    console.error('⚠️ [Cache Invalidation Error] Error al limpiar el caché:', error.message);
+    logger.error(`[Cache Invalidation Error] Error al limpiar el caché: ${error.message}`); // 👈 Reemplazado por Winston error
   }
 };
